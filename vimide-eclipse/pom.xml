@@ -1,16 +1,115 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <artifactId>vimide-parent</artifactId>
-        <groupId>ls.keyhom.vimide</groupId>
-        <version>1.0.0-SNAPSHOT</version>
-        <relativePath>..</relativePath>
-    </parent>
-    <groupId>ls.keyhom.vimide.eclipse</groupId>
-    <artifactId>vimide-eclipse</artifactId>
-    <packaging>pom</packaging>
-    <name>Vimide Eclipse Projects</name>
-    <description>The vimide works with eclipse plugins.</description>
-    
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>vimide-parent</artifactId>
+    <groupId>ls.keyhom.vimide</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>..</relativePath>
+  </parent>
+  <groupId>ls.keyhom.vimide.eclipse</groupId>
+  <artifactId>vimide-eclipse</artifactId>
+  <packaging>pom</packaging>
+  <name>Vimide Eclipse Projects</name>
+  <description>The vimide works with eclipse plugins. Built by tycho.</description>
+
+  <properties>
+    <!-- defined for tycho. -->
+    <tycho.version>0.15.0</tycho.version>
+    <eclipse.distro>indigo</eclipse.distro>
+
+    <!-- defined for METAINF -->
+    <bundle.root.namespace>org.vimide.eclipse</bundle.root.namespace>
+    <bundle.symbolicName>${project.artifactId}</bundle.symbolicName>
+
+    <!-- defined for Maven. -->
+    <maven.test.skip>true</maven.test.skip>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>eclipse-indigo</id>
+      <layout>p2</layout>
+      <name>Eclipse Indigo Repository</name>
+      <url>http://download.eclipse.org/releases/indigo/</url>
+    </repository>
+  </repositories>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-maven-plugin</artifactId>
+          <version>${tycho.version}</version>
+          <extensions>true</extensions>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>target-platform-configuration</artifactId>
+          <version>${tycho.version}</version>
+          <configuration>
+            <resolver>p2</resolver>
+            <pomDependencies>consider</pomDependencies>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>
+                      org.apache.maven.plugins
+                    </groupId>
+                    <artifactId>
+                      maven-dependency-plugin
+                    </artifactId>
+                    <versionRange>
+                      [2.4,)
+                    </versionRange>
+                    <goals>
+                      <goal>
+                        copy-dependencies
+                      </goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore/>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>tycho</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eclipse.tycho</groupId>
+            <artifactId>tycho-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+      <modules>
+        <module>org.vimide.eclipse.core</module>
+      </modules>
+    </profile>
+  </profiles>
+
+  <modules>
+    <module>org.vimide.eclipse.core</module>
+    <module>org.vimide.eclipse.jdt</module>
+    <module>org.vimide.eclipse.ui</module>
+  </modules>
 </project>
