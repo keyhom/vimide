@@ -20,12 +20,10 @@
  *     3. This notice may not be removed or altered from any source
  *     distribution.
  */
-
 package org.vimide.eclipse.ui.views;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.part.ViewPart;
 
@@ -40,19 +38,6 @@ public class ConsoleView extends ViewPart {
     /**
      * {@inheritDoc}
      * 
-     * @see org.eclipse.ui.part.WorkbenchPart#createPartControl(org.eclipse.swt.widgets.Composite)
-     */
-    @Override
-    public void createPartControl(Composite parent) {
-        Label label = new Label(parent, SWT.WRAP);
-        label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false,
-                false));
-        label.setText("HELLO WORLD");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.eclipse.ui.part.WorkbenchPart#setFocus()
      */
     @Override
@@ -60,6 +45,19 @@ public class ConsoleView extends ViewPart {
         // set focus to my widget. For a label, this doesn't
         // make much sense, but for more complex sets of widgets
         // you would decide which one gets the focus.
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.eclipse.ui.part.WorkbenchPart#createPartControl(org.eclipse.swt.widgets.Composite)
+     */
+    @Override
+    public void createPartControl(org.eclipse.swt.widgets.Composite parent) {
+        Label label = new Label(parent, SWT.WRAP);
+        label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false,
+                false));
+        label.setText("HELLO WORLD");
     }
 
 }

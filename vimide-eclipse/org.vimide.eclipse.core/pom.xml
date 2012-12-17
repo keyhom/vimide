@@ -6,7 +6,7 @@
   <parent>
     <artifactId>vimide-eclipse</artifactId>
     <groupId>ls.keyhom.vimide.eclipse</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0.qualifier</version>
   </parent>
   <artifactId>org.vimide.eclipse.core</artifactId>
   <name>Vimide Core Plugin</name>
@@ -16,5 +16,63 @@
     <bundle.symbolicName>${project.artifactId}</bundle.symbolicName>
     <bundle.namespace>org.vimide.eclipse.core</bundle.namespace>
   </properties>
-  
+
+  <dependencies>
+    <dependency>
+      <groupId>ls.keyhom.vimide</groupId>
+      <artifactId>vimide-core</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+      <scope>runtime</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.mina</groupId>
+          <artifactId>mina-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.2</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>ls.keyhom.vimide</groupId>
+                  <artifactId>vimide-core</artifactId>
+                  <version>1.0.0-SNAPSHOT</version>
+                </artifactItem>
+              </artifactItems>
+              <includeScope>runtime</includeScope>
+              <transitive>true</transitive>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <outputDirectory>${basedir}/lib</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>

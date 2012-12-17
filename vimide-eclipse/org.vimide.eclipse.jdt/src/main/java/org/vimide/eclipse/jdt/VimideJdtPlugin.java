@@ -23,10 +23,12 @@
 
 package org.vimide.eclipse.jdt;
 
+import org.eclipse.core.runtime.Plugin;
+
 /**
- *
+ * 
  * @author keyhom (keyhom.c@gmail.com)
  */
-public class VimideJdtPlugin {
+public class VimideJdtPlugin extends Plugin {
 
 }

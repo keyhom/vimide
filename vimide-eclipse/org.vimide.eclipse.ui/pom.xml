@@ -5,7 +5,7 @@
   <parent>
     <artifactId>vimide-eclipse</artifactId>
     <groupId>ls.keyhom.vimide.eclipse</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0.qualifier</version>
   </parent>
   <artifactId>org.vimide.eclipse.ui</artifactId>
   <name>Vimide UI Plugin</name>

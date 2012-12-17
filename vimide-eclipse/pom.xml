@@ -9,13 +9,14 @@
   </parent>
   <groupId>ls.keyhom.vimide.eclipse</groupId>
   <artifactId>vimide-eclipse</artifactId>
+  <version>1.0.0.qualifier</version>
   <packaging>pom</packaging>
   <name>Vimide Eclipse Projects</name>
   <description>The vimide works with eclipse plugins. Built by tycho.</description>
 
   <properties>
     <!-- defined for tycho. -->
-    <tycho.version>0.15.0</tycho.version>
+    <tycho.version>0.16.0</tycho.version>
     <eclipse.distro>indigo</eclipse.distro>
 
     <!-- defined for METAINF -->
@@ -24,6 +25,7 @@
 
     <!-- defined for Maven. -->
     <maven.test.skip>true</maven.test.skip>
+    <eclipse-repository.url>http://download.eclipse.org/releases/indigo/</eclipse-repository.url>
   </properties>
 
   <repositories>
@@ -31,11 +33,21 @@
       <id>eclipse-indigo</id>
       <layout>p2</layout>
       <name>Eclipse Indigo Repository</name>
-      <url>http://download.eclipse.org/releases/indigo/</url>
+      <url>${eclipse-repository.url}</url>
     </repository>
   </repositories>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -50,7 +62,47 @@
           <version>${tycho.version}</version>
           <configuration>
             <resolver>p2</resolver>
-            <pomDependencies>consider</pomDependencies>
+            <!-- <pomDependencies>consider</pomDependencies> -->
+            <target>
+              <artifact>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>vimide-target-definition</artifactId>
+                <version>${project.version}</version>
+<!--                 <classifier>vimide-target-definition-${project.version}</classifier> -->
+              </artifact>
+            </target>
+            <environments>
+              <environment>
+                <os>win32</os>
+                <ws>win32</ws>
+                <arch>x86</arch>
+              </environment>
+              <environment>
+                <os>win32</os>
+                <ws>win32</ws>
+                <arch>x86_64</arch>
+              </environment>
+              <environment>
+                <os>linux</os>
+                <ws>gtk</ws>
+                <arch>x86</arch>
+              </environment>
+              <environment>
+                <os>linux</os>
+                <ws>gtk</ws>
+                <arch>x86_64</arch>
+              </environment>
+              <environment>
+                <os>macosx</os>
+                <ws>cocoa</ws>
+                <arch>x86</arch>
+              </environment>
+              <environment>
+                <os>macosx</os>
+                <ws>cocoa</ws>
+                <arch>x86_64</arch>
+              </environment>
+            </environments>
           </configuration>
         </plugin>
         <plugin>
@@ -86,24 +138,29 @@
 
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-eclipse-plugin</artifactId>
+          <version>2.9</version>
+          <configuration>
+            <additionalProjectnatures>
+              <projectnature>org.eclipse.m2e.core.maven2Nature</projectnature>
+            </additionalProjectnatures>
+            <additionalBuildcommands>
+              <buildcommand>org.eclipse.m2e.core.maven2Builder</buildcommand>
+            </additionalBuildcommands>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
 
   <profiles>
     <profile>
-      <id>tycho</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.eclipse.tycho</groupId>
-            <artifactId>tycho-maven-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-      <modules>
-        <module>org.vimide.eclipse.core</module>
-      </modules>
+      <id>e36</id>
+      <properties>
+        <eclipse-repository.url>http://download.eclipse.org/releases/helios/</eclipse-repository.url>
+      </properties>
     </profile>
   </profiles>
 
@@ -111,5 +168,7 @@
     <module>org.vimide.eclipse.core</module>
     <module>org.vimide.eclipse.jdt</module>
     <module>org.vimide.eclipse.ui</module>
+    <module>vimide-target-definition</module>
+    <module>org.vimide.eclipse.m2e</module>
   </modules>
 </project>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin
+>
+   <extension-point id="projectService" name="Project Service" schema="schema/org.vimide.eclipse.core.projectService.exsd"/>
+   <extension
+         id="org.vimide.eclipse.core.service.defaultProjectService"
+         name="DefaultProjectService"
+         point="org.vimide.eclipse.core.projectService">
+      <project-service
+            class="org.vimide.eclipse.core.service.DefaultProjectService">
+      </project-service>
+   </extension>
+</plugin>

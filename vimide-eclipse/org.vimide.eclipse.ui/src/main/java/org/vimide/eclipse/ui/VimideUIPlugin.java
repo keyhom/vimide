@@ -23,10 +23,12 @@
 
 package org.vimide.eclipse.ui;
 
+import org.eclipse.core.runtime.Plugin;
+
 /**
- *
+ * 
  * @author keyhom (keyhom.c@gmail.com)
  */
-public class VimideUIPlugin {
+public class VimideUIPlugin extends Plugin {
 
 }
