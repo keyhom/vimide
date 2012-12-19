@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.vimide.core.server.VimideHttpServer;
 import org.vimide.eclipse.core.servlet.JobsServlet;
 import org.vimide.eclipse.core.servlet.PingServlet;
+import org.vimide.eclipse.core.servlet.ServletListServlet;
 import org.vimide.eclipse.core.servlet.ShellServlet;
 import org.vimide.eclipse.core.servlet.WorkspaceDirServlet;
 import org.vimide.eclipse.core.servlet.project.ProjectByResourceServlet;
@@ -79,6 +80,7 @@ public class VimideCorePlugin extends VimidePlugin {
             LOGGER.error("Exception caught: {}", e.getMessage(), e);
         }
         
+        VimideHttpServer.getInstance().registerServlet(ServletListServlet.class);
         VimideHttpServer.getInstance().registerServlet(PingServlet.class);
         VimideHttpServer.getInstance().registerServlet(ShellServlet.class);
         VimideHttpServer.getInstance().registerServlet(JobsServlet.class);

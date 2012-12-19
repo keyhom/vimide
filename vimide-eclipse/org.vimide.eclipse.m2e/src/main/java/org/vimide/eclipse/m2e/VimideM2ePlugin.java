@@ -28,7 +28,6 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.eclipse.core.VimidePlugin;
-import org.vimide.eclipse.core.service.IProjectService;
 
 /**
  * An vimide plugin implementation of m2e supported.
@@ -75,7 +74,6 @@ public class VimideM2ePlugin extends VimidePlugin {
         }
 
         if (activateRequired) {
-            IProjectService projectService = null;
         }
     }
 

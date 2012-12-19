@@ -22,9 +22,12 @@
  */
 package org.vimide.core.server;
 
+import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.List;
 
+import javax.servlet.Servlet;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 
@@ -35,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
 /**
  * Http implementation of Vimide's server.
@@ -75,6 +79,8 @@ public class VimideHttpServer {
      * Http daemon server instance.
      */
     private Server httpd;
+    private List<WeakReference<Class<? extends Servlet>>> servletList = Lists
+            .newArrayList();
 
     /**
      * Creates an new VimideHttpServer instance.
@@ -159,6 +165,8 @@ public class VimideHttpServer {
         if (isRunning()) {
             httpd.stop();
             LOGGER.info("STOPED the vimide http server.");
+            
+            servletList.clear();
         }
     }
 
@@ -201,9 +209,24 @@ public class VimideHttpServer {
                 for (String pathSpec : webServlet.urlPatterns()) {
                     contextHandler.addServlet(new ServletHolder(servletClass),
                             pathSpec);
+
+                    // adding a weak ref to the list for easier lookup.
+                    WeakReference<Class<? extends Servlet>> e = new WeakReference<Class<? extends Servlet>>(
+                            servletClass);
+                    servletList.add(e);
                 }
             }
         }
+    }
+
+    public List<Class<? extends Servlet>> listServlets() {
+        List<Class<? extends Servlet>> list = Lists.newArrayList();
+        for (WeakReference<Class<? extends Servlet>> ref : servletList) {
+            if (null != ref && null != ref.get()) {
+                list.add(ref.get());
+            }
+        }
+        return list;
     }
 
 }

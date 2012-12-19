@@ -4,11 +4,11 @@ Bundle-Name: Vimide JDT Plugin
 Bundle-SymbolicName: org.vimide.eclipse.jdt;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: org.vimide.eclipse.jdt.VimideJdtPlugin
-Require-Bundle: org.eclipse.core.runtime;bundle-version="3.7.0",
- org.eclipse.core.resources;bundle-version="3.7.100",
- org.eclipse.core.commands;bundle-version="3.6.0",
- org.eclipse.jdt;bundle-version="3.7.0",
- org.eclipse.jdt.core;bundle-version="3.7.0"
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.resources,
+ org.eclipse.core.commands,
+ org.eclipse.jdt,
+ org.eclipse.jdt.core
 Export-Package: org.vimide.eclipse.jdt
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy

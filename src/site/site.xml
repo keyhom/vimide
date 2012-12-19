@@ -4,36 +4,41 @@
   xsi:schemaLocation="http://maven.apache.org/DECORATION/1.3.0 http://maven.apache.org/xsd/decoration-1.3.0.xsd"
   name="Keyhom Vimide">
 
-  <!-- <bannerLeft> -->
-  <!-- <src> -->
-  <!-- http://revista.python.org.ar/3/en/images/vim/logo.png -->
-  <!-- </src> -->
-  <!-- </bannerLeft> -->
+  <bannerLeft>
+    <src>
+      ${site.root.url}/images/logo.png
+    </src>
+  </bannerLeft>
 
-  <!-- <bannerRight> -->
-  <!-- <src> -->
-  <!-- http://drexel-prssaregional.webs.com/MavenLogo%20hisres.jpg -->
-  <!-- </src> -->
-  <!-- </bannerRight> -->
+  <bannerRight>
+    <src>
+      ${site.root.url}/images/mavenLogo.jpg
+    </src>
+  </bannerRight>
 
   <publishDate position="right" />
   <version position="right" />
 
   <body>
     <head>
-      <link ref="/images/favicon.ico" rel="shortcut icon" />
-      <link ref="/images/css/base.css" rel="stylesheet" />
+      <link rel="stylesheet" href="${site.root.url}/css/base.css" />
+      <link rel="shortcut icon" href="${site.root.url}/images/favicon.ico" />
     </head>
 
     <links>
-      <item name="Apache Maven" href="http://maven.apache.org" />
-      <item name="Sonatype OSS" href="https://oss.sonatype.org" />
+      <item name="Apache Maven" href="http://maven.apache.org"
+        target="_blank" />
+      <item name="Sonatype OSS" href="https://oss.sonatype.org"
+        target="_blank" />
     </links>
 
     <breadcrumbs>
-      <item name="Keyhom Vimide" href="/" />
+      <item name="Keyhom Vimide" href="${project.url}" />
     </breadcrumbs>
 
+    <menu name="关于">
+      <item name="介绍" href="./index.html" />
+    </menu>
     <menu ref="reports" />
 
   </body>
