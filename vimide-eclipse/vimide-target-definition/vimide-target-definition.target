@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?pde version="3.6"?>
 
-<target name="Running Platform" sequenceNumber="4">
+<target name="Running Platform" sequenceNumber="7">
 <locations>
 <location path="${eclipse_home}" type="Profile"/>
 </locations>
