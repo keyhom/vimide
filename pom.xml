@@ -13,12 +13,13 @@
   <packaging>pom</packaging>
   <name>Vimide</name>
   <description>Works with any implements IDE for VIM Editor.</description>
-  
+
   <url>http://github.com/keyhom/vimide</url>
 
   <properties>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <site.root.url />
+    <site.root.url>${project.url}</site.root.url>
+    <apiDomain />
   </properties>
 
   <licenses>
@@ -175,6 +176,7 @@
       </activation>
       <properties>
         <site.root.url>http://localhost:8082</site.root.url>
+        <apiDomain>http://localhost:3333</apiDomain>
       </properties>
       <build>
         <pluginManagement>
@@ -213,7 +215,7 @@
             <reports>
               <report>summary</report>
               <report>project-team</report>
-              <report>dependency-info</report>
+              <!-- <report>dependency-info</report> -->
               <report>cim</report>
               <report>scm</report>
               <report>license</report>

@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Vendor: keyhom.org
+Bundle-Name: Vimide VimPlugin Plugin
+Bundle-SymbolicName: org.vimide.eclipse.vimplugin;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: org.vimide.eclipse.vimplugin.VimideVimpluginPlugin
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.resources,
+ org.eclipse.ui,
+ org.eclipse.ui.editors,
+ org.eclipse.ui.workbench.texteditor,
+ org.eclipse.jface.text,
+ org.vimide.eclipse.core
+Export-Package: org.vimide.eclipse.vimplugin
+Import-Package: org.eclipse.ui,
+ org.slf4j
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ActivationPolicy: lazy
+Bundle-Classpath: .

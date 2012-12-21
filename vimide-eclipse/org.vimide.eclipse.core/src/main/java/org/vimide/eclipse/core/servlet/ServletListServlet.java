@@ -39,6 +39,7 @@ import org.vimide.core.servlet.VimideHttpServletResponse;
  * @author keyhom (keyhom.c@gmail.com)
  */
 @WebServlet(urlPatterns = "/servletList")
+@Deprecated
 public class ServletListServlet extends GenericVimideHttpServlet {
 
     private static final long serialVersionUID = 1L;

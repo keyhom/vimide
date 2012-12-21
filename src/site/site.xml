@@ -39,6 +39,9 @@
     <menu name="关于">
       <item name="介绍" href="./index.html" />
     </menu>
+    <menu name="开发人员文档">
+      <item name="API接口列表" href="./apilist.html" />
+    </menu>
     <menu ref="reports" />
 
   </body>

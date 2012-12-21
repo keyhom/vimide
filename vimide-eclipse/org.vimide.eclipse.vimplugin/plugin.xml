@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version"3.2"?>
+<plugin>
+  <extension id="vimide.vimplugin.editors"
+        name="vimeditor"
+        point="org.eclipse.ui.editors">
+     <editor
+           id="org.vimide.eclipse.vimplugin.editors.VimEditor"
+           class="org.vimide.eclipse.vimplugin.editors.VimEditor"
+           contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor"
+           icon="icons/vim16x16.gif"
+           name="Vim">
+       <contentTypeBinding contentTypeId="org.eclipse.core.runtime.text" />
+     </editor>
+  </extension>
+  <extension
+        point="org.eclipse.ui.preferencePages">
+        <page id="org.vimide.eclipse.vimplugin.preferences.VimpluginPreference"
+              class="org.vimide.eclipse.vimplugin.preferences.VimpluginPreference" 
+              name="Vimplugin" />
+  </extension>
+  <extension
+        point="org.eclipse.core.runtime.preferences">
+        <initializer class="org.vimide.eclipse.vimplugin.preferences.VimpluginPreferenceInitializer" />
+  </extension>
+</plugin>

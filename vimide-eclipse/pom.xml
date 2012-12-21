@@ -171,5 +171,6 @@
     <module>org.vimide.eclipse.ui</module>
     <module>vimide-target-definition</module>
     <module>org.vimide.eclipse.m2e</module>
+    <module>org.vimide.eclipse.vimplugin</module>
   </modules>
 </project>

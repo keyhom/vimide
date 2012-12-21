@@ -1,5 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
+Bundle-Vendor: keyhom.org
 Bundle-Name: %pluginName
 Bundle-SymbolicName: org.vimide.eclipse.m2e;singleton:=true
 Bundle-Version: 1.0.0.qualifier

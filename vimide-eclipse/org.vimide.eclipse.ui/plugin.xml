@@ -7,7 +7,7 @@
     </category>
     <view id="org.vimide.eclipse.ui.views.ConsoleView"
           name="Vimide Console"
-          icon="icons/vim.gif"
+          icon="icons/vim16x16.gif"
           category="org.vimide.ui.views"
           class="org.vimide.eclipse.ui.views.ConsoleView">
     </view>
