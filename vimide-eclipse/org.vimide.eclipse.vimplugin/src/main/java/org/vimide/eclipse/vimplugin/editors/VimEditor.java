@@ -261,7 +261,7 @@ public class VimEditor extends TextEditor {
      * @see org.eclipse.ui.editors.text.TextEditor#dispose()
      */
     public void dispose() {
-        // closing the eclispe tab directlly calls dispose, but not close.
+        // closing the eclipse tab directly calls dispose, but not close.
         close(true);
 
         document = null;

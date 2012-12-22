@@ -74,9 +74,9 @@ public class VimpluginSupport {
     }
 
     /**
-     * Determines if the configured gvim path availabe.
+     * Determines if the configured gvim path available.
      * 
-     * @return true if the configured gvim path availabe, false otherwise.
+     * @return true if the configured gvim path available, false otherwise.
      */
     public boolean isGvimAvailable() {
         if (null != features
@@ -198,8 +198,6 @@ public class VimpluginSupport {
 
                     LOGGER.debug("Gvim features supported: {}", result);
 
-                    features.clear();
-
                     for (String f : StringUtils.split(result)) {
                         String[] keyVal = StringUtils.split(f, ":");
                         if (keyVal.length != 2) {
@@ -236,7 +234,7 @@ public class VimpluginSupport {
     /**
      * Determines if the configured gvim instance supports embedding.
      * 
-     * @return true if embedding is suppported, false otherwise.
+     * @return true if embedding is supported, false otherwise.
      */
     public boolean isEmbedSupported() {
         return hasFeature("embed");

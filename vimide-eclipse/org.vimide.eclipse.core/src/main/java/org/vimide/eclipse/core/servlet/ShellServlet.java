@@ -22,19 +22,22 @@
  */
 package org.vimide.eclipse.core.servlet;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
+import org.vimide.core.util.CommandLineExecutor;
+
+import com.google.common.base.Strings;
 
 /**
- * An implementation of shell execution with submiting command-line.
+ * An implementation of shell execution with supplied command-line.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
@@ -48,6 +51,8 @@ public class ShellServlet extends GenericVimideHttpServlet {
      */
     static final Logger LOGGER = LoggerFactory.getLogger(ShellServlet.class);
 
+    static final int DEFAULT_TIMEOUT = 5000;
+
     /**
      * {@inheritDoc}
      * 
@@ -59,32 +64,34 @@ public class ShellServlet extends GenericVimideHttpServlet {
             VimideHttpServletResponse resp) throws ServletException,
             IOException {
 
-        String sourceEncoding = getOSEncoding();
-
         final String targetEncoding = req.getNotNullParameter("encoding",
                 getDefaultCharacterEncoding());
+
+        final int timeout = req.getIntParameter("timeout", DEFAULT_TIMEOUT);
         final String command = req.getNotNullParameter("command");
 
-        String output = null, error = null;
-
         if (!command.isEmpty()) {
-            final Process process = Runtime.getRuntime().exec(command);
-            output = IOUtils.toString(process.getInputStream(), sourceEncoding);
-            error = IOUtils.toString(process.getErrorStream(), sourceEncoding);
-
-            // parse encoding.
-
             try {
 
-                if (process.waitFor() == 0) {
-                    // output
-                    resp.writeAsPlainText(new String(output.getBytes(),
-                            targetEncoding));
+                CommandLineExecutor executor = CommandLineExecutor
+                        .parse(command);
+                executor.setWorkingDir(new File(System.getProperty("user.home")));
+                executor.execute(timeout);
+
+                if (executor.getExitCode() == 0) {
+                    if (!Strings.isNullOrEmpty(targetEncoding))
+                        resp.writeAsPlainText(executor
+                                .getOutput(targetEncoding));
+                    else
+                        resp.writeAsPlainText(executor.getOutput());
                 } else {
-                    // error
-                    resp.writeAsPlainText(new String(error.getBytes(),
-                            targetEncoding));
+                    if (!Strings.isNullOrEmpty(targetEncoding))
+                        resp.writeAsPlainText(executor.getError(targetEncoding));
+                    else
+                        resp.writeAsPlainText(executor.getError());
+
                 }
+
             } catch (final Exception e) {
                 LOGGER.error("Error caught at shell execute: {}",
                         e.getMessage(), e);

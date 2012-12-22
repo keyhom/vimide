@@ -38,7 +38,7 @@ public class CommandExecutor implements Runnable {
      * Executes the supplied command.
      * 
      * @param cmd the command to execute.
-     * @return the command exeuctor instance containing the ending state of the
+     * @return the command executor instance containing the ending state of the
      *         process.
      * @throws Exception
      */
