@@ -33,6 +33,8 @@ import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 
@@ -44,13 +46,63 @@ import com.google.common.base.Strings;
 public class CommandLineExecutor {
 
     /**
-     * Parses the supplied <code>commandLine</code> to an executor object.
+     * Logger
+     */
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(CommandLineExecutor.class);
+
+    /**
+     * Parses the supplied <code>commandLine</code> to an command-line executor.
      * 
      * @param commandLine the command-line value.
      * @return an executor container.
      */
     public static CommandLineExecutor parse(String commandLine) {
+        if (Strings.isNullOrEmpty(commandLine))
+            throw new IllegalArgumentException("Illegal commandLine argument.");
         return new CommandLineExecutor(commandLine);
+    }
+
+    /**
+     * Parses the supplied <code>executable</code> to an command-line executor.
+     * 
+     * @param executable the executable file.
+     * @return an executor container.
+     */
+    public static CommandLineExecutor parse(File executable) {
+        if (null == executable || !executable.exists()) {
+            throw new IllegalArgumentException("Illegal executable file.");
+        }
+        return new CommandLineExecutor(executable);
+    }
+
+    /**
+     * Parses the supplied <code>executable</code> and <code>options</code> to
+     * an command-line executor.
+     * 
+     * @param executable the executable program.
+     * @param options the options with the executable.
+     * @return an executor container.
+     */
+    public static CommandLineExecutor parse(String executable,
+            String... options) {
+        if (Strings.isNullOrEmpty(executable))
+            throw new IllegalArgumentException(
+                    "Illegal executable was supplied.");
+        return new CommandLineExecutor(executable, options);
+    }
+
+    /**
+     * Parses the supplied <code>commands</code> to an command-line executor.
+     * 
+     * @param commands the command-line values.
+     * @return an executor container.
+     */
+    public static CommandLineExecutor parse(String... commands) {
+        if (null == commands || commands.length == 0)
+            throw new IllegalArgumentException(
+                    "Illegal command-line arguments.");
+        return new CommandLineExecutor(commands);
     }
 
     private final CommandLine cl;
@@ -73,6 +125,17 @@ public class CommandLineExecutor {
     /**
      * Creates an new CommandLineExecutor instance.
      * 
+     * @param executable the executable file.
+     */
+    private CommandLineExecutor(File executable) {
+        super();
+
+        cl = new CommandLine(executable);
+    }
+
+    /**
+     * Creates an new CommandLineExecutor instance.
+     * 
      * @param executable the executable value.
      * @param options the options.
      */
@@ -82,6 +145,21 @@ public class CommandLineExecutor {
         cl = new CommandLine(executable);
         if (null != options && options.length > 0) {
             cl.addArguments(options);
+        }
+    }
+
+    /**
+     * Creates an new CommandLineExecutor instance.
+     * 
+     * @param commands
+     */
+    private CommandLineExecutor(String[] commands) {
+        super();
+
+        cl = new CommandLine(commands[0]);
+
+        for (int i = 1; i < commands.length; i++) {
+            cl.addArgument(commands[i]);
         }
     }
 
@@ -104,8 +182,8 @@ public class CommandLineExecutor {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         ByteArrayOutputStream errStream = new ByteArrayOutputStream();
 
+        final Executor exec = new DefaultExecutor();
         try {
-            final Executor exec = new DefaultExecutor();
             exec.setStreamHandler(new PumpStreamHandler(outStream, errStream));
 
             if (timeout > 0) {
@@ -118,12 +196,11 @@ public class CommandLineExecutor {
             }
 
             this.exitCode = exec.execute(cl, System.getenv());
-        } catch (final Exception e) {
-            e.printStackTrace();
-        } finally {
             output = outStream.toByteArray();
-            error = outStream.toByteArray();
-
+        } catch (final Exception e) {
+            error = errStream.toByteArray();
+            LOGGER.error("Execute command faild: {}", cl, e);
+        } finally {
             IOUtils.closeQuietly(outStream);
             IOUtils.closeQuietly(errStream);
         }

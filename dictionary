@@ -21,4 +21,10 @@ netbeansgvim
 vim
 netbeans
 href
-vimplugincharset
+gvim
+vimplugin
+charset
+redir
+mina
+exec
+seqno

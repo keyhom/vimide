@@ -24,6 +24,7 @@ package org.vimide.eclipse.vimplugin;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.runtime.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vimide.core.util.CommandExecutor;
+import org.vimide.core.util.CommandLineExecutor;
 import org.vimide.eclipse.vimplugin.preferences.VimpluginPreferenceConstants;
 
 import com.google.common.base.Strings;
@@ -51,8 +52,11 @@ public class VimpluginSupport {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(VimpluginSupport.class);
 
+    private File tempFile;
+
     private static final String GVIM_FEATURE_TEST = "redir! > <file> "
             + "| silent! <command> " + "| quit";
+    // private static final String GVIM_FEATURE_TEST = "<command> " + "| quit";
     private static final String GVIM_FEATURE_COMMAND_UNIX = "echo 'embed:' . "
             + "(v:version >= 700 && has('gui_gtk')) . "
             + "' netbeans:' . (has('netbeans_intg')) . "
@@ -100,40 +104,17 @@ public class VimpluginSupport {
                 final File tempFile = File.createTempFile("vimide_gvim", null);
                 tempFile.deleteOnExit();
 
-                CommandExecutor ce = CommandExecutor.execute(new String[] {
-                        gvim,
-                        "-f",
-                        "-X",
-                        "-u",
-                        "NONE",
-                        "-U",
-                        "NONE",
-                        "--cmd",
-                        "redir! > " + tempFile.getAbsolutePath()
-                                + " | silent! echo version | quit" }, 5000);
-
-                FileInputStream fis = new FileInputStream(tempFile);
-                try {
-                    if (ce.getExitCode() == 0) {
-                        // command execute successfully.
-                        String result = IOUtils.toString(fis);
-                        LOGGER.debug("Gvim test output: {}", result);
-                        if (!Strings.isNullOrEmpty(result)) {
-                            try {
-                                int version = Integer.parseInt(result.trim());
-                                if (version >= 700) {
-                                    available = true;
-                                    LOGGER.debug("Gvim is available.");
-                                }
-                            } catch (NumberFormatException ignore) {
-                            }
-                        }
-                    }
-                } finally {
-                    IOUtils.closeQuietly(fis);
+                String result = execute(gvim, "echo version");
+                // command execute successfully.
+                LOGGER.debug("Gvim test output: {}", result);
+                if (!Strings.isNullOrEmpty(result)) {
                     try {
-                        tempFile.delete();
-                    } catch (final Exception ignore) {
+                        int version = Integer.parseInt(result.trim());
+                        if (version >= 700) {
+                            available = true;
+                            LOGGER.debug("Gvim is available.");
+                        }
+                    } catch (NumberFormatException ignore) {
                     }
                 }
             } catch (Exception e) {
@@ -165,61 +146,21 @@ public class VimpluginSupport {
                 .getString(VimpluginPreferenceConstants.P_GVIM);
 
         try {
-            File tempFile = File.createTempFile("vimide_gvim", null);
-            tempFile.deleteOnExit();
             String command = GVIM_FEATURE_COMMAND_UNIX;
             if (Platform.getOS().equals(Platform.OS_WIN32)) {
                 command = GVIM_FEATURE_COMMAND_WINDOWS;
             }
 
-            command = GVIM_FEATURE_TEST.replaceFirst("<command>", command);
-            command = command
-                    .replaceFirst("<file>", tempFile.getAbsolutePath());
+            String result = this.execute(gvim, command);
+            LOGGER.debug("Gvim features supported: {}", result);
 
-            String[] cmd = new String[] { gvim, "-f", "-X", "-u", "NONE", "-U",
-                    "NONE", "--cmd", command };
-
-            final CommandExecutor ce = CommandExecutor.execute(cmd, 5000);
-
-            int exitCode = ce.getExitCode();
-            String errorMessage = ce.getErrorMessage();
-
-            try {
-                if (exitCode != 0) {
-                    LOGGER.error("Failed to execute gvim: {}", errorMessage);
+            for (String f : StringUtils.split(result)) {
+                String[] keyVal = StringUtils.split(f, ":");
+                if (keyVal.length != 2) {
+                    LOGGER.error("Invalid response from gvim: {}", result);
                     return false;
                 }
-
-                FileInputStream in = null;
-
-                try {
-                    String result = IOUtils.toString(
-                            in = new FileInputStream(tempFile)).trim();
-
-                    LOGGER.debug("Gvim features supported: {}", result);
-
-                    for (String f : StringUtils.split(result)) {
-                        String[] keyVal = StringUtils.split(f, ":");
-                        if (keyVal.length != 2) {
-                            LOGGER.error("Invalid response from gvim: {}",
-                                    result);
-                            return false;
-                        }
-                        features.put(keyVal[0], keyVal[1].trim().equals("1"));
-                    }
-
-                } catch (IOException e) {
-                    LOGGER.error("Unable to read temp file.", e);
-                    return false;
-                } finally {
-                    IOUtils.closeQuietly(in);
-                    try {
-                        tempFile.delete();
-                    } catch (Exception ignore) {
-                    }
-                }
-
-            } finally {
+                features.put(keyVal[0], keyVal[1].trim().equals("1"));
             }
 
         } catch (final Exception e) {
@@ -266,6 +207,70 @@ public class VimpluginSupport {
      */
     public void reset() {
         features.clear();
+    }
+
+    private String execute(String executable, String command) throws Exception {
+        String options = " -f -X -u NONE -U NONE --cmd ";
+
+        if (null == tempFile) {
+            tempFile = File.createTempFile("vimide_vimplugin_test", null);
+            tempFile.deleteOnExit();
+            tempFile.setExecutable(true);
+        }
+
+        File tempResultFile = File.createTempFile("vimide_vimplugin_result",
+                null);
+        tempResultFile.deleteOnExit();
+        tempResultFile.setExecutable(false);
+
+        command = GVIM_FEATURE_TEST.replaceFirst("<command>", command);
+        command = command.replaceFirst("<file>",
+                tempResultFile.getAbsolutePath().replace("\\", "\\\\"));
+
+        final StringBuilder sb = new StringBuilder();
+
+        sb.append(executable);
+        sb.append(options);
+        sb.append("\"").append(command).append("\"");
+
+        if (Platform.getOS().equals(Platform.OS_LINUX)) {
+            sb.insert(0, "#!/bin/sh\n");
+            sb.append("\n");
+        } else if (Platform.getOS().equals(Platform.OS_WIN32)) {
+            sb.insert(0, "@echo off\n\r");
+            sb.append("\n\r");
+        }
+
+        FileOutputStream fos = new FileOutputStream(tempFile);
+        FileInputStream fis = new FileInputStream(tempResultFile);
+
+        try {
+            fos.write(sb.toString().getBytes());
+
+            CommandLineExecutor cle = null;
+            if (Platform.getOS().equals(Platform.OS_LINUX)) {
+                cle = CommandLineExecutor.parse(new String[] { "/bin/sh",
+                        tempFile.getAbsolutePath() });
+            } else if (Platform.getOS().equals(Platform.OS_WIN32)) {
+                cle = CommandLineExecutor.parse(new String[] { "cmd", "/c",
+                        tempFile.getAbsolutePath()});
+            }
+
+            cle.setWorkingDir(new File(System.getProperty("user.home")));
+            if (cle.execute(5000).getExitCode() == 0) {
+                return IOUtils.toString(fis);
+            }
+
+        } catch (final IOException ignore) {
+        } catch (final Exception e) {
+            LOGGER.error("Execute failed: {}", e.getMessage(), e);
+        } finally {
+            IOUtils.closeQuietly(fos);
+            IOUtils.closeQuietly(fis);
+            tempResultFile.delete();
+        }
+
+        return StringUtils.EMPTY;
     }
 
 }
