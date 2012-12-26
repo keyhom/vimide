@@ -27,7 +27,6 @@ import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.StringFieldEditor;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
-import org.vimide.core.util.Os;
 import org.vimide.eclipse.vimplugin.VimideVimpluginPlugin;
 import org.vimide.eclipse.vimplugin.VimpluginMessage;
 
@@ -64,14 +63,15 @@ public class VimpluginPreference extends FieldEditorPreferencePage implements
      */
     @Override
     protected void createFieldEditors() {
-        if (!Os.isFamily(Os.FAMILY_MAC)) {
-            addField(new BooleanFieldEditor(
-                    VimpluginPreferenceConstants.P_EMBED,
-                    VimpluginMessage.preferences_embed, getFieldEditorParent()));
-        }
-
-        addField(new BooleanFieldEditor(VimpluginPreferenceConstants.P_TABBED,
-                VimpluginMessage.preferences_tabbed, getFieldEditorParent()));
+        // if (!Os.isFamily(Os.FAMILY_MAC)) {
+        // addField(new BooleanFieldEditor(
+        // VimpluginPreferenceConstants.P_EMBED,
+        // VimpluginMessage.preferences_embed, getFieldEditorParent()));
+        // }
+        //
+        // addField(new
+        // BooleanFieldEditor(VimpluginPreferenceConstants.P_TABBED,
+        // VimpluginMessage.preferences_tabbed, getFieldEditorParent()));
 
         addField(new BooleanFieldEditor(
                 VimpluginPreferenceConstants.P_FOCUS_AUTO_CLICK,

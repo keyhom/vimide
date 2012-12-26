@@ -28,3 +28,10 @@ redir
 mina
 exec
 seqno
+gui
+def
+stacktrace
+unix
+gtk
+args
+tabbed

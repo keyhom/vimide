@@ -33,6 +33,7 @@ public class VimEvent {
     private String name;
     private String rawData;
     private String seqData;
+    private VimBufferSession session;
 
     /**
      * Creates an new VimEvent instance.
@@ -42,12 +43,13 @@ public class VimEvent {
      * @param seqno
      * @param data
      */
-    public VimEvent(int bufferId, String name, int seqno, String data) {
+    public VimEvent(int bufferId, String name, int seqno, String data, VimBufferSession session) {
         super();
         this.bufferId = bufferId;
         this.seqno = seqno;
         this.name = name;
         setData(data);
+        this.session = session;
     }
 
     /**
@@ -57,6 +59,10 @@ public class VimEvent {
         this.rawData = data;
         if (null != data)
             this.seqData = new String(data);
+    }
+    
+    public VimBufferSession getSession() {
+        return session;
     }
 
     public int getBufferId() {

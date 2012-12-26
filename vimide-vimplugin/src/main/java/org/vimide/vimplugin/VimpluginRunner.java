@@ -81,12 +81,15 @@ public class VimpluginRunner {
     private Shell shell;
     private Canvas vimContainer;
     private Process process;
+    private VimServer vimServer;
 
     /**
      * Creates an new VimpluginRunner instance.
      */
     VimpluginRunner() {
         super();
+
+        vimServer = new VimServer();
     }
 
     VimpluginRunner start() {
@@ -113,7 +116,7 @@ public class VimpluginRunner {
                 // send data
                 if (null != text.getText() && !text.getText().isEmpty()) {
                     String content = text.getText();
-                    VimServer.getServer(1).broadcast(content);
+                    vimServer.broadcast(content);
                 }
             }
 
@@ -130,7 +133,7 @@ public class VimpluginRunner {
                     // enter.
                     if (null != text.getText() && !text.getText().isEmpty()) {
                         String content = text.getText();
-                        VimServer.getServer(1).broadcast(content);
+                        vimServer.broadcast(content);
                     }
                 }
             }
@@ -187,7 +190,7 @@ public class VimpluginRunner {
 
         display.dispose();
 
-        VimServer.getServer(1).stop();
+        vimServer.stop();
     }
 
     void show() {
@@ -204,9 +207,7 @@ public class VimpluginRunner {
     }
 
     void startVimServer() {
-        VimServer server = VimServer.getServer(1);
-
-        server.start(new InetSocketAddress(3129));
+        vimServer.start(new InetSocketAddress(3129));
 
         int wid = vimContainer.handle;
 

@@ -22,6 +22,8 @@
  */
 package org.vimide.eclipse.vimplugin.editors;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.ui.editors.text.FileDocumentProvider;
 
 /**
@@ -30,4 +32,13 @@ import org.eclipse.ui.editors.text.FileDocumentProvider;
  */
 public class VimDocumentProvider extends FileDocumentProvider {
 
+    /**
+     * {@inheritDoc}
+     * @see org.eclipse.ui.editors.text.StorageDocumentProvider#createDocument(java.lang.Object)
+     */
+    @Override
+    protected IDocument createDocument(Object element) throws CoreException {
+        return super.createDocument(element);
+    }
+    
 }

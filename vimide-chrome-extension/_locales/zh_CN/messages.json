@@ -1,0 +1,8 @@
+{
+    "manifest_appName": {
+        "message": "Vimide的Vim插件"
+    },
+    "manifest_appDescription": {
+        "message": "嵌入GVIM编辑器到您的Google浏览器。"
+    }
+}

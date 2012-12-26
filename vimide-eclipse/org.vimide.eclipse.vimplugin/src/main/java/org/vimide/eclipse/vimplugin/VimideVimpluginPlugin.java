@@ -23,13 +23,19 @@
 package org.vimide.eclipse.vimplugin;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.vimide.eclipse.vimplugin.editors.VimEditorPartListener;
+import org.vimide.eclipse.vimplugin.preferences.VimpluginPreferenceConstants;
+import org.vimide.vimplugin.server.VimServer;
 
 /**
  * Vim plugin to embed the vim/gvim into the eclipse by vimide.
@@ -55,7 +61,11 @@ public class VimideVimpluginPlugin extends AbstractUIPlugin {
         return plugin;
     }
 
-    Properties properties;
+    private Properties properties;
+    private VimServer vimServer;
+    private AtomicInteger numberOfBufers = new AtomicInteger(0);
+
+    private VimEditorPartListener partListener;
 
     /**
      * Creates an new VimideVimpluginPlugin instance.
@@ -88,13 +98,51 @@ public class VimideVimpluginPlugin extends AbstractUIPlugin {
     @Override
     public void start(BundleContext context) throws Exception {
         super.start(context);
+
+        // vim start at buffer 1.
+        getNumberOfBuffers().set(1);
+
+        vimServer = new VimServer();
+        startVimServer();
     }
 
     @Override
     public void stop(BundleContext context) throws Exception {
         super.stop(context);
 
-        new VimpluginSupport().reset();
+        plugin = null;
+        vimServer.stop();
+    }
+
+    public AtomicInteger getNumberOfBuffers() {
+        return numberOfBufers;
+    }
+
+    /**
+     * Starts the vim server.
+     */
+    protected void startVimServer() {
+        if (null != vimServer) {
+            stopVimServer(); // stop the vimServer first.
+
+            int port = getPreferenceStore().getInt(
+                    VimpluginPreferenceConstants.P_PORT);
+
+            vimServer.start(new InetSocketAddress(port));
+        }
+    }
+
+    /**
+     * Stops the vim server.
+     */
+    protected void stopVimServer() {
+        if (null != vimServer) {
+            vimServer.stop();
+        }
+    }
+
+    public IPartListener getPartListener() {
+        return partListener;
     }
 
     /**
@@ -116,6 +164,10 @@ public class VimideVimpluginPlugin extends AbstractUIPlugin {
      */
     public String getProperty(String name, String defaultValue) {
         return properties.getProperty(name, defaultValue);
+    }
+
+    public VimServer getVimServer() {
+        return vimServer;
     }
 
 }

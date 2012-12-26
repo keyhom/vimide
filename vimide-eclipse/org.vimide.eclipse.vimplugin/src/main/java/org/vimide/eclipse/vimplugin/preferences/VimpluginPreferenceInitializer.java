@@ -44,9 +44,9 @@ public class VimpluginPreferenceInitializer extends
         final VimideVimpluginPlugin plugin = VimideVimpluginPlugin.getDefault();
         IPreferenceStore preferenceStore = plugin.getPreferenceStore();
         preferenceStore.setDefault(VimpluginPreferenceConstants.P_PORT, 3219);
-        preferenceStore.setDefault(VimpluginPreferenceConstants.P_EMBED,
-                "true".equals(plugin.getProperty("gvim.embed.default")));
-        preferenceStore.setDefault(VimpluginPreferenceConstants.P_TABBED, true);
+//        preferenceStore.setDefault(VimpluginPreferenceConstants.P_EMBED,
+//                "true".equals(plugin.getProperty("gvim.embed.default")));
+//        preferenceStore.setDefault(VimpluginPreferenceConstants.P_TABBED, true);
         preferenceStore.setDefault(
                 VimpluginPreferenceConstants.P_FOCUS_AUTO_CLICK, true);
         preferenceStore.setDefault(VimpluginPreferenceConstants.P_GVIM,

@@ -1,0 +1,8 @@
+{
+    "manifest_appName": {
+        "message": "Vimide Chrome Vimplugin"
+    },
+    "manifest_appDescription": {
+        "message": "Embedded the gvim into your chrome."
+    }
+}

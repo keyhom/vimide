@@ -45,6 +45,13 @@ public class VimpluginMessage extends CoreMessages {
     public static String gvim_external_success;
     public static String gvim_embed_unsupported;
     public static String gvim_embed_fallback;
+    
+    /**
+     * Document message.
+     */
+    public static String document_create_failed;
+    public static String document_insert_failed;
+    public static String document_remove_failed;
 
     /**
      * Preferences messages.

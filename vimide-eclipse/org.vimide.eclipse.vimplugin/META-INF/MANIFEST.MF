@@ -14,7 +14,12 @@ Require-Bundle: org.eclipse.core.runtime,
  org.vimide.eclipse.core
 Export-Package: org.vimide.eclipse.vimplugin
 Import-Package: org.eclipse.ui,
- org.slf4j
+ org.slf4j,
+ org.apache.commons.io,
+ org.apache.commons.lang,
+ com.google.common.base
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
-Bundle-Classpath: .
+Bundle-Classpath: .,
+ lib/mina-core-2.0.7.jar,
+ lib/vimide-vimplugin-1.0.0-SNAPSHOT.jar

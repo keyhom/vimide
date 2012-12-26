@@ -53,48 +53,20 @@ public class VimServer {
      */
     static final Logger LOGGER = LoggerFactory.getLogger(VimServer.class);
 
-    /**
-     * Storages servers of vim.
-     */
-    static final Map<Integer, VimServer> servers = new HashMap<Integer, VimServer>();
-
-    /**
-     * Gets the VimServer by the specified id.
-     * 
-     * @param serverId the id of VimServer.
-     * @return the server of vim.
-     */
-    public static VimServer getServer(Integer serverId) {
-        if (!servers.containsKey(serverId))
-            servers.put(serverId, new VimServer(serverId));
-        return servers.get(serverId);
-    }
-
     private int seqno = 0;
     private int bufId = 1;
     Map<Integer, String> buffers = new HashMap<Integer, String>();
 
-    private int serverId;
     private SocketAcceptor acceptor;
     private final Map<Integer, VimBufferSession> sessions;
 
     /**
      * Creates an new VimServer instance.
      */
-    private VimServer(int serverId) {
+    public VimServer() {
         super();
 
-        this.serverId = serverId;
         this.sessions = new HashMap<Integer, VimBufferSession>();
-    }
-
-    /**
-     * Gets the id of server.
-     * 
-     * @return server id.
-     */
-    public int getServerId() {
-        return serverId;
     }
 
     /**
@@ -134,6 +106,9 @@ public class VimServer {
                     @Override
                     protected void dispatch(VimEvent event) {
                         // nothing dispatch.
+                        if (event.getName().equals("startupDone")) {
+                            super.dispatch(event);
+                        }
                     }
                 });
             }
@@ -160,21 +135,15 @@ public class VimServer {
         return ++bufId;
     }
 
+    public VimBufferSession getDefaultSession() {
+        return sessions.get(0);
+    }
+
     /**
      * @param content
      */
     public void broadcast(String content) {
         IoUtil.broadcast(content, acceptor.getManagedSessions().values());
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
-    @Override
-    public String toString() {
-        return "VimServer #" + getServerId();
     }
 
     /**
@@ -267,11 +236,14 @@ public class VimServer {
 
                     if (null != name && !name.isEmpty()) {
                         // lookup in server handlers and invoke.
-                        VimEvent vimEvent = new VimEvent(bufId, name, seqno,
-                                data);
 
                         if (server.sessions.containsKey(bufId)) {
-                            server.sessions.get(bufId).dispatch(vimEvent);
+                            VimBufferSession bufferSession = server.sessions
+                                    .get(bufId);
+                            bufferSession.setIoSession(session);
+                            VimEvent vimEvent = new VimEvent(bufId, name,
+                                    seqno, data, bufferSession);
+                            bufferSession.dispatch(vimEvent);
                         }
                     }
                 }

@@ -23,6 +23,9 @@
 package org.vimide.eclipse.vimplugin.editors;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 
 import org.eclipse.core.resources.IFile;
@@ -31,27 +34,33 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceDialog;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.IURIEditorInput;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.vimide.eclipse.vimplugin.VimInstanceManager;
+import org.vimide.eclipse.vimplugin.VimInstanceManager.VimInstance;
 import org.vimide.eclipse.vimplugin.VimideVimpluginPlugin;
 import org.vimide.eclipse.vimplugin.VimpluginMessage;
 import org.vimide.eclipse.vimplugin.VimpluginSupport;
-import org.vimide.eclipse.vimplugin.preferences.VimpluginPreferenceConstants;
+import org.vimide.vimplugin.server.VimBufferSession;
+import org.vimide.vimplugin.server.VimEvent;
+import org.vimide.vimplugin.server.VimEventListener;
 
 /**
  * Provides an editor to eclipse which is backed by a vim instance.
@@ -81,17 +90,16 @@ public class VimEditor extends TextEditor {
     private Shell shell;
     private Composite parent;
 
-    private boolean embedded;
-    private boolean tabbed;
     private boolean documentListen;
 
+    private VimInstance vimInstance;
     private int bufferId;
     private IDocument document;
     private VimDocumentProvider documentProvider;
 
     private IFile selectFile;
 
-    private Canvas editorGUI;
+    private Canvas vimCanvas;
 
     /**
      * Creates an new VimEditor instance.
@@ -112,9 +120,7 @@ public class VimEditor extends TextEditor {
         this.parent = parent;
         this.shell = parent.getShell();
 
-        final VimpluginSupport vimpluginSupport = new VimpluginSupport();
-
-        if (!vimpluginSupport.isGvimAvailable()) {
+        if (!VimpluginSupport.isGvimAvailable()) {
             MessageDialog dialog = new MessageDialog(shell, "Vimplugin", null,
                     VimpluginMessage.gvim_not_found, MessageDialog.ERROR,
                     new String[] { IDialogConstants.OK_LABEL,
@@ -146,28 +152,20 @@ public class VimEditor extends TextEditor {
 
             dialog.open();
 
-            if (!vimpluginSupport.isGvimAvailable()) {
+            if (!VimpluginSupport.isGvimAvailable()) {
                 throw new RuntimeException(VimpluginMessage.gvim_not_found);
             }
         }
 
-        final VimideVimpluginPlugin plugin = VimideVimpluginPlugin.getDefault();
-        final IPreferenceStore store = plugin.getPreferenceStore();
-
-        tabbed = store.getBoolean(VimpluginPreferenceConstants.P_TABBED);
-        embedded = store.getBoolean(VimpluginPreferenceConstants.P_EMBED);
-
         documentListen = false;
 
-        if (embedded) {
-            if (!vimpluginSupport.isEmbedSupported()) {
-                String message = NLS.bind(VimpluginMessage.gvim_not_supported,
-                        VimpluginMessage.gvim_embed_not_supported);
-                throw new RuntimeException(message);
-            }
+        if (!VimpluginSupport.isEmbedSupported()) {
+            String message = NLS.bind(VimpluginMessage.gvim_not_supported,
+                    VimpluginMessage.gvim_embed_not_supported);
+            throw new RuntimeException(message);
         }
 
-        if (!vimpluginSupport.isNbSupported()) {
+        if (!VimpluginSupport.isNbSupported()) {
             String message = NLS.bind(VimpluginMessage.gvim_not_supported,
                     VimpluginMessage.gvim_nb_not_enabled);
             throw new RuntimeException(message);
@@ -202,20 +200,114 @@ public class VimEditor extends TextEditor {
         }
 
         if (null != filePath) {
-            editorGUI = new Canvas(parent, SWT.EMBEDDED);
-
-            // TODO: creates a vim instance.
+            vimCanvas = new Canvas(parent, SWT.EMBEDDED);
+            createVim(projectPath, filePath, vimCanvas);
         }
+    }
 
-        super.createPartControl(parent);
+    /**
+     * Creates a vim instance figuring out if it should be external of embed.
+     * 
+     * @param workingDir the working directory.
+     * @param filePath the file path for opening.
+     * @param parent the parent composite to embed.
+     * @param embedded
+     * @param tabbed
+     */
+    private void createVim(String workingDir, final String filePath,
+            Composite parent) {
+        final int bufferId = VimideVimpluginPlugin.getDefault()
+                .getNumberOfBuffers().getAndIncrement();
+
+        final Object waitObject = new Object();
+        // create embedded vim instance.
+        vimInstance = VimInstanceManager.getInstance().createVimInstance();
+        vimInstance.start(workingDir, parent.handle);
+        vimInstance.invokeAtStartup(new VimEventListener() {
+
+            @Override
+            public void actived(VimEvent event) throws Exception {
+                LOGGER.debug("StartupDone...");
+
+                event.getSession().removeEventListener("startupDone", this);
+
+                final VimBufferSession session = event.getSession();
+                session.commandBuilder().bufferId(bufferId).command("editFile")
+                        .stringData(filePath).toCommandData().flush();
+                if (documentListen) {
+                    session.commandBuilder().bufferId(bufferId)
+                            .command("startDocumentListen").toCommandData()
+                            .flush();
+                } else {
+                    session.commandBuilder().bufferId(bufferId)
+                            .command("stopDocumentListen").toCommandData()
+                            .flush();
+                }
+
+                session.commandBuilder().bufferId(bufferId).command("setTitle")
+                        .stringData(getTitle()).toCommandData().flush();
+
+                synchronized (waitObject) {
+                    waitObject.notify();
+                }
+            }
+        });
+
+        synchronized (waitObject) {
+            try {
+                waitObject.wait(5000);
+            } catch (final InterruptedException ignore) {
+            }
+        }
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.eclipse.ui.part.WorkbenchPart#setTitle(java.lang.String)
+     * @see org.eclipse.ui.texteditor.AbstractTextEditor#init(org.eclipse.ui.IEditorSite,
+     *      org.eclipse.ui.IEditorInput)
      */
-    public void setTitle(final String path) {
+    @Override
+    public void init(IEditorSite site, IEditorInput input)
+            throws PartInitException {
+        setSite(site);
+        setInput(input);
+
+        try {
+            document = documentProvider.createDocument(input);
+        } catch (final Exception e) {
+            error(VimpluginMessage.document_create_failed, e);
+        }
+
+        // set vim title image.
+        Image titleImage = new Image(null, this.getClass().getResourceAsStream(
+                "/icons/vim16x16.gif"));
+        setTitleImage(titleImage);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.eclipse.ui.texteditor.AbstractDecoratedTextEditor#isEditable()
+     */
+    @Override
+    public boolean isEditable() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.eclipse.ui.texteditor.StatusTextEditor#setFocus()
+     */
+    @Override
+    public void setFocus() {
+        if (isEmbedded()) {
+            parent.setFocus();
+        }
+    }
+
+    public void setTitleTo(final String path) {
         Display.getDefault().asyncExec(new Runnable() {
 
             @Override
@@ -252,7 +344,7 @@ public class VimEditor extends TextEditor {
      * @return true if the gvim instance is embedded, false otherwise.
      */
     public boolean isEmbedded() {
-        return embedded;
+        return vimInstance.isEmbedded();
     }
 
     /**
@@ -269,4 +361,35 @@ public class VimEditor extends TextEditor {
         super.dispose();
     }
 
+    @Override
+    public void close(boolean save) {
+        if (null != vimInstance) {
+            vimInstance.dispose();
+        }
+
+        super.close(save);
+    }
+
+    private void error(String message, Throwable e) {
+        // convert stacktrace to string
+        String stacktrace;
+        StringWriter sw = null;
+        PrintWriter pw = null;
+        try {
+            sw = new StringWriter();
+            pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            stacktrace = sw.toString();
+        } finally {
+            try {
+                if (pw != null)
+                    pw.close();
+                if (sw != null)
+                    sw.close();
+            } catch (IOException ignore) {
+            }
+        }
+
+        MessageDialog.openError(shell, "Vimplugin", message + stacktrace);
+    }
 }
