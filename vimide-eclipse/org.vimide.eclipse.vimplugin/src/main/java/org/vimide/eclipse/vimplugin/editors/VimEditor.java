@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 
+import org.apache.commons.exec.OS;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -216,13 +217,15 @@ public class VimEditor extends TextEditor {
      */
     private void createVim(String workingDir, final String filePath,
             Composite parent) {
+        
+        long wid = OS.isFamilyWindows() ? parent.handle : parent.embeddedHandle;
         final int bufferId = VimideVimpluginPlugin.getDefault()
                 .getNumberOfBuffers().getAndIncrement();
-
         final Object waitObject = new Object();
+        
         // create embedded vim instance.
         vimInstance = VimInstanceManager.getInstance().createVimInstance();
-        vimInstance.start(workingDir, parent.handle);
+        vimInstance.start(workingDir, wid);
         vimInstance.invokeAtStartup(new VimEventListener() {
 
             @Override

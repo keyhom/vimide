@@ -1,22 +1,47 @@
+" Vimide Script.
 " Author: keyhom (keyhom.c@gmail.com)
-" Copyright: {{{
-"
-" }}}
+" License: Copyright (c) 2012 keyhom.c@gmail.com.
+" 
+"   This software is provided 'as-is', without any express or implied warranty.
+"   In no event will the authors be held liable for any damages arising from
+"   the use of this software.
+"   
+"   Permission is granted to anyone to use this software for any purpose
+"   excluding commercial applications, and to alter it and redistribute it
+"   freely, subject to the following restrictions:
+"   
+"     1. The origin of this software must not be misrepresented; you must not
+"     claim that you wrote the original software. If you use this software
+"     in a product, an acknowledgment in the product documentation would be
+"     appreciated but is not required.
+"   
+"     2. Altered source versions must be plainly marked as such, and must not
+"     be misrepresented as being the original software.
+"   
+"     3. This notice may not be removed or altered from any source
+"     distribution.
+" 
 
-" Command Declartions: {{{
-if !exists(':Vimide')
-  command Vimide :call <SID>Validate()
+" ----------------------------------------------------------------------------
+" Command Declartions:
+" ----------------------------------------------------------------------------
+
+if !exists(':VIde')
+  command VIde :call <SID>Validate()
 endif
-" }}}
+ 
+" ----------------------------------------------------------------------------
+" Script Variables:
+" ----------------------------------------------------------------------------
 
-" Script Variables: {{{
 let s:required_version = 700
-" }}}
 
-" Script Functions: {{{
+" ----------------------------------------------------------------------------
+" Script Functions: 
+" ----------------------------------------------------------------------------
 
 " Determines the vim version.
-function! s:Validate() " {{{
+function! s:Validate() 
   if v:version < s:required_version
     let ver = strpart(v:version, 0, 1) . '.' .  strpart(v:version, 2)
     echom 'Error: your vim version is '. ver . '.'
@@ -24,7 +49,7 @@ function! s:Validate() " {{{
     return
   endif
   call s:FeatureValidate()
-endfunction " }}}
+endfunction 
 
 " Determines the version and exit early if unsupport vim.
 if v:version < s:required_version
@@ -32,7 +57,7 @@ if v:version < s:required_version
 endif
 
 " Determines the vim features.
-function! s:FeatureValidate() "{{{
+function! s:FeatureValidate()
   let errors = []
   " Determines 'compatible' option
   if &compatible
@@ -78,10 +103,10 @@ function! s:FeatureValidate() "{{{
     endfor
   endif
   echohl None
-endfunction " }}}
+endfunction 
 
 " Determines the vimide vimfiles baseidr.
-function! s:VimideBaseDir() " {{{
+function! s:VimideBaseDir() 
   if !exists('g:VimideBaseDir')
     let savewig = &wildignore
     set wildignore=""
@@ -98,10 +123,10 @@ function! s:VimideBaseDir() " {{{
     let g:VimideBaseDir = escape(basedir, ' ')
   endif
   return g:VimideBaseDir
-endfunction "}}}
+endfunction
 
 " Initialized.
-function! s:Init() " {{{
+function! s:Init() 
   let basedir = s:VimideBaseDir()
   if basedir == ''
     return
@@ -110,10 +135,9 @@ function! s:Init() " {{{
   exec 'set runtimepath+=' . basedir . '/vimide,' . basedir . '/vimide/after'
   runtime! vimide/plugin/*.vim
   runtime! vimide/after/plugin/*.vim
-endfunction "}}}
-
-" }}}
+endfunction
 
 " Do initialized.
 call <SID>Init()
 
+" vim:ft=vim

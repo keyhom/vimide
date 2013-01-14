@@ -156,8 +156,8 @@ public class VimSupport {
         String commandFileName = null;
         if (System.getProperty("os.name").contains("Windows")) {
             commandFileName = "command_win32.properties";
-        } else if (System.getProperty("os.name").contains("linux")
-                || System.getProperty("os.name").contains("unix")) {
+        } else if (System.getProperty("os.name").contains("Linux")
+                || System.getProperty("os.name").contains("Unix")) {
             commandFileName = "command_linux.properties";
         }
         try {
