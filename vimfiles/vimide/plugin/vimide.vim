@@ -33,6 +33,44 @@ let g:LIST_TYPE = 3
 let g:DICT_TYPE = 4
 let g:FLOAT_TYPE = 5
 
+if !exists('g:VIdeLogLevel')
+  let g:VIdeLogLevel = 4
+endif
+
+if !exists('g:VIdeTraceHighlight')
+  let g:VIdeTraceHighlight = 'Normal'
+endif
+
+if !exists('g:VIdeDebugHighlight')
+  let g:VIdeDebugHighlight = 'Normal'
+endif
+
+if !exists('g:VIdeInfoHighlight')
+  let g:VIdeInfoHighlight = 'Statement'
+endif
+
+if !exists('g:VIdeWarningHighlight')
+  let g:VIdeWarningHighlight = 'WarningMsg'
+endif
+
+if !exists('g:VIdeErrorHighlight')
+  let g:VIdeErrorHighlight = 'Error'
+endif
+
+if !exists('g:VIdeFatalHighlight')
+  let g:VIdeFatalHighlight = 'Error'
+endif
+
+if has('signs')
+  if !exists('g:VIdeSignLevel')
+    let g:VIdeSignLevel = 5
+  endif
+else
+  let g:VIdeSignLevel = 0
+endif
+
+let g:VIdeQuote = "['\"]"
+
 if !exists('g:VIdeSeparator')
   let g:VIdeSeparator = '/'
   if has('win32') || has('win64')
@@ -80,5 +118,9 @@ endfunction
 function! s:Enable()
   let g:VIdeDisable = 0
 endfunction
+
+if !exists('g:VIdeDisable')
+  let g:VIdeDisable = 0
+endif
 
 " vim:ft=vim

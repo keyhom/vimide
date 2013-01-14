@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.net.URI;
 
 import org.apache.commons.exec.OS;
@@ -217,8 +218,22 @@ public class VimEditor extends TextEditor {
      */
     private void createVim(String workingDir, final String filePath,
             Composite parent) {
+        long wid = 0;
         
-        long wid = OS.isFamilyWindows() ? parent.handle : parent.embeddedHandle;
+        Field f = null;
+        try{
+            if (OS.isFamilyWindows()) {
+              f = Composite.class.getField("handle");
+            } else{
+              f = Composite.class.getField("embeddedHandle");
+            }
+            
+            wid = f.getLong(parent);
+        }catch(NoSuchFieldException nsfe){
+        } catch (IllegalArgumentException e) {
+        } catch (IllegalAccessException e) {
+        }
+        
         final int bufferId = VimideVimpluginPlugin.getDefault()
                 .getNumberOfBuffers().getAndIncrement();
         final Object waitObject = new Object();

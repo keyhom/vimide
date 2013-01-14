@@ -68,7 +68,11 @@ function! s:GetLibXgetPath()
         for a in arr
           let file = findfile(s:libfilename, a)
           if file != ''
-            let g:VIde_LibXget = a . g:VIdeSeparator . file
+            if file =~ a
+              let g:VIde_LibXget = file
+            elseif file =~ s:libfilename
+              let g:VIde_LibXget = a . g:VIdeSeparator . file
+            endif
             break
           endif
         endfor
@@ -84,18 +88,33 @@ endfunction
 
 " Ping the vimide server for alive determines.
 function! vimide#Ping()
-  let result = vimide#Execute(s:command_ping)
+  let result = vimide#Execute(s:command_ping, {'raw': 0})
+
   if type(result) == g:STRING_TYPE
-    " call vimide#util#Echo(result)
-    echom result
+    call vimide#print#Echo(result)
+  elseif type(result) == g:DICT_TYPE
+    let ev = get(result, 'Eclipse')
+    let vv = get(result, 'Vimide')
+    let str = "Eclipse: " . ev . "\n"
+    let str .= "Vimide : " . vv
+    call vimide#print#EchoInfo(str)
   endif
 endfunction
 
 " Executes the command by server.
-function! vimide#Execute(command)
+function! vimide#Execute(command, ...)
+  " Optional args:
+  "   options: {
+  "     exec: 1 to execute the command using execute instead of system.
+  "     raw:  1 to get the result without evaluating as json.
+  "   }
+
   if g:VIdeDisable
     return 0
   endif
+
+  let options = len(a:000) > 0 ? a:000[0] : {}
+  let exec = get(options, 'exec', 0)
 
   let result = ''
   if a:command != ''
@@ -106,10 +125,24 @@ function! vimide#Execute(command)
         let command .= '/'
       endif
       let command .= a:command
-      let result = libcall(libfile, 'xget', command)
+
+      " escape specific characters.
+      let command = escape(command, '&%!')
+      let command = escape(command, '%!')
+      let command = escape(command, '#')
+      silent! let result = libcall(libfile, 'xget', command)
     endif
   endif
-  return result
+
+  let result = substitute(result, '\n$', '', '') " removed the tail \n.
+  if has('win32') || has('win64') || has('win32unix')
+    let result = substitute(result, '\<c-m>$', '', '')
+  endif
+
+  " TODO: error determines here.
+
+  let raw = get(options, 'raw', 0)
+  return result != '' && !raw ? eval(result) : result
 endfunction
 
 " vim:ft=vim

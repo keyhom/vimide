@@ -66,10 +66,11 @@ public class ProjectListServlet extends GenericVimideHttpServlet {
             VimideHttpServletResponse resp) throws ServletException,
             IOException {
 
-        final List<IProject> results;
+        List<IProject> results;
+        
+        String[] natures = req.getParameterValues("natures");
 
-        String[] natureIdsFilters = NaturesMapping.getNatureIds(req
-                .getParameterValues("natures"));
+        String[] natureIdsFilters = NaturesMapping.getNatureIds(natures);
         Set<String> natureIdsSet = null;
 
         if (null != natureIdsFilters && natureIdsFilters.length > 0) {
@@ -77,9 +78,9 @@ public class ProjectListServlet extends GenericVimideHttpServlet {
         }
 
         final IProject[] projects = getProjects();
+        results = Lists.newArrayList();
 
         if (null != natureIdsSet) {
-            results = Lists.newArrayList();
             for (IProject project : projects) {
                 try {
                     String[] natureIds = project.getDescription()
@@ -94,7 +95,7 @@ public class ProjectListServlet extends GenericVimideHttpServlet {
                             project.getName(), e.getMessage());
                 }
             }
-        } else {
+        } else if (null == natures || natures.length == 0) {
             results = Arrays.asList(projects);
         }
 
