@@ -11,5 +11,6 @@
 .settings/
 .externalToolBuilders/
 target/
+lookuptags
 tags
 

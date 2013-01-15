@@ -23,25 +23,53 @@
 " 
 
 " ----------------------------------------------------------------------------
+"
 " Command Declartions: 
+"
 " ----------------------------------------------------------------------------
 
-command! -nargs=? Project call vimide#project#impl#PrintCurrentProjectName()
+" Project:, just a specific keyword instead.
+command! -nargs=? Project :call vimide#project#impl#PrintCurrentProjectName()
 
-command! -nargs=? ProjectList call vimide#project#impl#ProjectList('<args>')
+" ProjectList:
+command! -nargs=? Plist :call vimide#project#impl#ProjectList('<args>')
+
+" ProjectInfo:
 command! -nargs=? 
-      \ -complete=customlist,vimide#project#impl#CommandCompleteProject
-       \ ProjectInfo call vimide#project#impl#ProjectInfo('<args>')
+      \ -complete=customlist,vimide#project#impl#CommandCompleteSingleProject
+      \ Pinfo :call vimide#project#impl#ProjectInfo('<args>')
 
+" ProjectCreate:
 command! -nargs=+ 
       \ -complete=customlist,vimide#project#impl#CommandCompleteProjectCreate
-      \ ProjectCreate call vimide#project#impl#ProjectCreate('<args>')
+      \ Pcreate :call vimide#project#impl#ProjectCreate('<args>')
 
+" ProjectImport:
 command! -nargs=1 -complete=dir
-      \ ProjectImport call vimide#project#impl#ProjectImport('<args>')
+      \ Pimport :call vimide#project#impl#ProjectImport('<args>')
 
-command! -nargs=1 
-      \ -complete=customlist,vimide#project#impl#CommandCompleteProject
-      \ ProjectDelete call vimide#project#impl#ProjectDelete('<args>')
+" ProjectDelete:
+command! -nargs=+
+      \ -complete=customlist,vimide#project#impl#CommandCompleteMultiProject
+      \ Pdelete :call vimide#project#impl#ProjectDelete(<f-args>)
+
+" ProjectClose:
+command! -nargs=+
+      \ -complete=customlist,vimide#project#impl#CommandCompleteMultiProject
+      \ Pclose :call vimide#project#impl#ProjectClose(<f-args>)
+
+" ProjectOpen:
+command! -nargs=+
+      \ -complete=customlist,vimide#project#impl#CommandCompleteMultiProject
+      \ Popen :call vimide#project#impl#ProjectOpen(<f-args>)
+
+" ProjectRefresh:
+command! -nargs=*
+      \ -complete=customlist,vimide#project#impl#CommandCompleteMultiProject
+      \ Prefresh :call vimide#project#impl#ProjectRefresh(<f-args>)
+
+" ProjectRefreshAll:
+command! -nargs=0 Prefreshall
+      \ :call vimide#project#impl#ProjectRefreshAll()
 
 " vim:ft=vim

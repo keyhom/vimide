@@ -95,6 +95,7 @@ public class ProjectImportServlet extends GenericVimideHttpServlet {
                     && !Strings.isNullOrEmpty(description.getName())) {
                 String name = description.getName();
 
+                IPath workspaceLoc = getWorkspace().getRoot().getLocation();
                 IProject project = getWorkspace().getRoot().getProject(name);
                 if (project.exists()) {
                     // already exists.
@@ -108,6 +109,8 @@ public class ProjectImportServlet extends GenericVimideHttpServlet {
 
                     try {
                         project.create(description, new NullProgressMonitor());
+                        project.open(null);
+                        
                         sb.append(NLS.bind(CoreMessages.project_imported,
                                 project.getName()));
                     } catch (final CoreException e) {

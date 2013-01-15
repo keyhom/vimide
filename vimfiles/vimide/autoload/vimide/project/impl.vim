@@ -23,19 +23,33 @@
 " 
 
 " ----------------------------------------------------------------------------
+"
 " Script Variables:
+"
 " ----------------------------------------------------------------------------
 
 let s:command_project_by_resource = "/project_by_resource?file=<file>"
 let s:command_project_list = "/project_list"
 let s:command_project_names = "/project_names"
 let s:command_project_info = "/project_info?project=<project>"
+let s:command_project_close = "/project_close"
+let s:command_project_open = "/project_open"
+let s:command_project_import = "/project_import?file=<file>"
+let s:command_project_delete = "/project_delete"
+let s:command_project_refresh = "/project_refresh"
 
 " ----------------------------------------------------------------------------
+"
 " Functions:
+"
 " ----------------------------------------------------------------------------
 
+" ----------------------------------------------------------------------------
 " Retrieves the project name of current project by the specified file path.
+"
+" GetProject:
+"   path  - the specific path located in the target project.
+" ----------------------------------------------------------------------------
 function! vimide#project#impl#GetProject(path)
   if a:path != ''
     let path = vimide#util#LegalPath(a:path)
@@ -48,17 +62,26 @@ function! vimide#project#impl#GetProject(path)
   return ''
 endfunction
 
+" ----------------------------------------------------------------------------
 " Retrieves the name of current project and print it out.
+"
+" PrintCurrentProjectName:
+" ----------------------------------------------------------------------------
 function! vimide#project#impl#PrintCurrentProjectName()
   let projectName = vimide#project#impl#GetProject(expand('%:p'))
   if projectName != ''
     call vimide#print#EchoInfo("You're just focus in project: " . projectName)
   else
-    call vimide#print#EchoWarning("Can't determines the project.")
+    call vimide#project#impl#UnableToDetermineProject()
   endif
 endfunction
 
+" ----------------------------------------------------------------------------
 " Retrieves and print out the supplied or focus project informations.
+"
+" ProjectInfo:
+"   project - the specific project to determine.
+" ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectInfo(project)
   let project = a:project
   if project == ''
@@ -93,7 +116,11 @@ function! vimide#project#impl#ProjectInfo(project)
   endif
 endfunction
 
+" ----------------------------------------------------------------------------
 " Gets the name collection of the projects.
+"
+" GetProjectNames:
+" ----------------------------------------------------------------------------
 function! vimide#project#impl#GetProjectNames()
   let command = s:command_project_names
   let result = vimide#Execute(command)
@@ -105,8 +132,12 @@ function! vimide#project#impl#GetProjectNames()
   return []
 endfunction
 
+" ----------------------------------------------------------------------------
 " Retrieves and print out the list of projects.
-" @param natures (optional) the natures to filtering. sepa with comma.
+"
+" ProjectList:
+"   natures (optional) - the natures to filtering. sepa with comma.
+" ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectList(...)
   let command = s:command_project_list
 
@@ -168,20 +199,247 @@ function! vimide#project#impl#ProjectList(...)
   endif
 endfunction
 
+" ----------------------------------------------------------------------------
+" Closes the supplied project.
+"
+" ProjectClose:
+"   projects[...] - the specific projects to close.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectClose(...)
+  if a:0 > 0
+    let queryString = ''
+    for _p in a:000
+      if strlen(queryString)
+        let queryString .= '&'
+      endif
+      let queryString .= 'project=' . _p
+    endfor
+
+    let command = s:command_project_close . '?' . queryString
+    let result = vimide#Execute(command)
+    if type(result) == g:STRING_TYPE
+      call vimide#print#Echo(result)
+    endif
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Deletes the supplied projects.
+"
+" ProjectDelete:
+"   projects[...] - the specific projects to delete.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectDelete(...)
+  if a:0 > 0
+    let queryString = ''
+    for _p in a:000
+      if strlen(queryString)
+        let queryString .= '&'
+      endif
+      let queryString .= 'project=' . _p
+    endfor
+    let command = s:command_project_delete . '?' . queryString
+    let result = vimide#Execute(command)
+    if type(result) == g:STRING_TYPE
+      call vimide#print#Echo(result)
+    endif
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Imports the project locate at the supplied path.
+"
+" ProjectImport:
+"   path  - the path of the specific project located at.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectImport(path)
+  let path = a:path
+  if path != ''
+    let path = vimide#util#LegalPath(path)
+    let command = substitute(s:command_project_import, '<file>', path, '')
+    let result = vimide#Execute(command)
+    if type(result) == g:STRING_TYPE
+      call vimide#print#Echo(result)
+    endif
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Opens the supplied project.
+"
+" ProjectOpen:
+"   projects[...] - the specific projects to open.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectOpen(...)
+  if a:0 > 0
+    let queryString = ''
+    for _p in a:000
+      if strlen(queryString)
+        let queryString .= '&'
+      endif
+      let queryString .= 'project=' . _p
+    endfor
+    let command = s:command_project_open . '?' . queryString
+    let result = vimide#Execute(command)
+    if type(result) == g:STRING_TYPE
+      call vimide#print#Echo(result)
+    endif
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Refreshs the supplied projects.
+"
+" ProjectRefresh:
+"   projects[...] - the specific projects to refresh.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectRefresh(...)
+  let projects = copy(a:000)
+  if a:0 == 0
+    " determines the current project by auto.
+    let _p = vimide#project#impl#GetProject(expand('%:p'))
+    if _p == ''
+      " can't determines the current project.
+      call vimide#project#impl#UnableToDetermineProject()
+      return
+    endif
+    call add(projects, _p)
+  endif
+
+  if len(projects) > 0
+    let queryString = ''
+    for _p in projects
+      if strlen(queryString)
+        let queryString .= '&'
+      endif
+      let queryString .= 'project=' . _p
+    endfor
+    let command = s:command_project_refresh . '?' . queryString
+    let result = vimide#Execute(command)
+    if type(result) == g:STRING_TYPE
+      call vimide#print#Echo(result)
+    endif
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Refreshs the all projects.
+"
+" ProjectRefreshAll:
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectRefreshAll()
+  let projects = vimide#project#impl#GetProjectNames()
+  if len(projects) > 0
+    let command = ''
+    for _p in projects
+      if strlen(command) > 0
+        let command .= ','
+      endif
+      let command .= '"' . _p . '"'
+    endfor
+    let command = 'call vimide#project#impl#ProjectRefresh(' . command . ')'
+    execute command
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
 " Error handling for Unable to determines the supplied project.
+"
+" UnableToDetermineProject:
+" ----------------------------------------------------------------------------
 function! vimide#project#impl#UnableToDetermineProject()
   call vimide#print#EchoError("Unable to determine the project. " . 
         \ "Please specify a project name or " . 
         \ "execute from a valid project directory.")
 endfunction
 
+" ----------------------------------------------------------------------------
+"
+" Command Completion:
+"
+" ----------------------------------------------------------------------------
+
+" ----------------------------------------------------------------------------
 " Custom command completion for project names.
+"
+" CommandCompleteProject:
+" ----------------------------------------------------------------------------
 function! vimide#project#impl#CommandCompleteProject(argLead, cmdLine, cursorPos)
   return vimide#project#impl#CommandCompleteProjectByNature(a:argLead, 
         \ a:cmdLine, a:cursorPos, '')
 endfunction
 
+" ----------------------------------------------------------------------------
+" Custom command completion for single project name only.
+"
+" CommandCompleteSingleProject:
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#CommandCompleteSingleProject(argLead, cmdLine, cursorPos)
+  let cmdLine = strpart(a:cmdLine, 0, a:cursorPos)
+  let cmdTail = strpart(a:cmdLine, a:cursorPos)
+  let argLead = substitute(a:argLead, cmdTail . '$', '', '')
+
+  let projects = vimide#project#impl#GetProjectNames()
+
+  " block when had select a project name.
+  let args = split(cmdLine, '\s')
+
+  if len(args) > 1
+    for _project in projects
+      if args[1] =~ _project
+        return []
+      endif
+    endfor
+  endif
+
+  if cmdLine !~ '[^\\]\s$'
+    let argLead = escape(escape(argLead, '~'), '~')
+    " remove escape slashes
+    let argLead = substitute(argLead, '\', '', 'g')
+    call filter(projects, 'v:val =~ "^' . argLead . '"')
+  endif
+
+  call map(projects, 'escape(v:val, " ")')
+  return projects
+endfunction
+
+" ----------------------------------------------------------------------------
+" Custom command completion for multi projects names.
+"
+" CommandCompleteMultiProject:
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#CommandCompleteMultiProject(argLead, cmdLine, cursorPos)
+  let cmdLine = strpart(a:cmdLine, 0, a:cursorPos)
+  let cmdTail = strpart(a:cmdLine, a:cursorPos)
+  let argLead = substitute(a:argLead, cmdTail . '$', '', '')
+
+  let projects = vimide#project#impl#GetProjectNames()
+
+  " filtering the selected project name.
+  let args = split(cmdLine, '\s')
+
+  if len(args) > 1
+    for _a in args
+      call filter(projects, 'v:val != "' . _a . '"')
+    endfor
+  endif
+
+  if cmdLine !~ '[^\\]\s$'
+    let argLead = escape(escape(argLead, '~'), '~')
+    " remove escape slashes
+    let argLead = substitute(argLead, '\', '', 'g')
+    call filter(projects, 'v:val =~ "^' . argLead . '"')
+  endif
+
+  call map(projects, 'escape(v:val, " ")')
+  return projects
+endfunction
+
+" ----------------------------------------------------------------------------
 " Custom command completion for project names by natures.
+"
+" CommandCompleteProjectByNature:
+" ----------------------------------------------------------------------------
 function! vimide#project#impl#CommandCompleteProjectByNature(argLead, cmdLine, cursorPos, nature)
   let cmdLine = strpart(a:cmdLine, 0, a:cursorPos)
   let cmdTail = strpart(a:cmdLine, a:cursorPos)
