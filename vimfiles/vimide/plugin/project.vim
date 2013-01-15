@@ -23,25 +23,44 @@
 " 
 
 " ----------------------------------------------------------------------------
+"
 " Command Declartions: 
+"
 " ----------------------------------------------------------------------------
 
+" Project:, just a specific keyword instead.
 command! -nargs=? Project call vimide#project#impl#PrintCurrentProjectName()
 
+" ProjectList:
 command! -nargs=? ProjectList call vimide#project#impl#ProjectList('<args>')
+
+" ProjectInfo:
 command! -nargs=? 
-      \ -complete=customlist,vimide#project#impl#CommandCompleteProject
+      \ -complete=customlist,vimide#project#impl#CommandCompleteSingleProject
        \ ProjectInfo call vimide#project#impl#ProjectInfo('<args>')
 
+" ProjectCreate:
 command! -nargs=+ 
       \ -complete=customlist,vimide#project#impl#CommandCompleteProjectCreate
       \ ProjectCreate call vimide#project#impl#ProjectCreate('<args>')
 
+" ProjectImport:
 command! -nargs=1 -complete=dir
       \ ProjectImport call vimide#project#impl#ProjectImport('<args>')
 
-command! -nargs=1 
-      \ -complete=customlist,vimide#project#impl#CommandCompleteProject
-      \ ProjectDelete call vimide#project#impl#ProjectDelete('<args>')
+" ProjectDelete:
+command! -nargs=+
+      \ -complete=customlist,vimide#project#impl#CommandCompleteMultiProject
+      \ ProjectDelete call vimide#project#impl#ProjectDelete(<f-args>)
+
+" ProjectClose:
+command! -nargs=+
+      \ -complete=customlist,vimide#project#impl#CommandCompleteMultiProject
+      \ ProjectClose call vimide#project#impl#ProjectClose(<f-args>)
+
+" ProjectOpen:
+command! -nargs=+
+      \ -complete=customlist,vimide#project#impl#CommandCompleteMultiProject
+      \ ProjectOpen call vimide#project#impl#ProjectOpen(<f-args>)
 
 " vim:ft=vim

@@ -23,14 +23,23 @@
 " 
 
 " ----------------------------------------------------------------------------
+"
 " Script Variables:
+"
 " ----------------------------------------------------------------------------
 
 " ----------------------------------------------------------------------------
+"
 " Functions:
+"
 " ----------------------------------------------------------------------------
 
-" Makes the supplied path to a legal format, specific in cygwin.
+" ----------------------------------------------------------------------------
+" Makes the supplied path to a legal format, specify to cygwin.
+"
+" LegalPath:
+"   path  - the specific path to make legal, specify to cygwin.
+" ----------------------------------------------------------------------------
 function! vimide#util#LegalPath(path)
   let path = a:path
   if has('win32unix') && a:path =~ '^/cygdrive'

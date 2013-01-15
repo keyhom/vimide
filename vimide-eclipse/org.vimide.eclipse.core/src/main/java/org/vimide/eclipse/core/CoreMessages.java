@@ -58,6 +58,7 @@ public class CoreMessages extends NLS {
     public static String project_nature_removed;
     
     /* Project messages.*/
+    public static String project_not_exists;
     public static String project_name_exists;
     public static String project_not_found;
     public static String project_missing_nature;

@@ -23,7 +23,9 @@
 " 
 
 " ----------------------------------------------------------------------------
+"
 " Command Declartions:
+"
 " ----------------------------------------------------------------------------
 
 if !exists(':VIde')
@@ -31,16 +33,24 @@ if !exists(':VIde')
 endif
  
 " ----------------------------------------------------------------------------
+"
 " Script Variables:
+"
 " ----------------------------------------------------------------------------
 
 let s:required_version = 700
 
 " ----------------------------------------------------------------------------
+"
 " Script Functions: 
+"
 " ----------------------------------------------------------------------------
 
+" ----------------------------------------------------------------------------
 " Determines the vim version.
+"
+" Validate:
+" ----------------------------------------------------------------------------
 function! s:Validate() 
   if v:version < s:required_version
     let ver = strpart(v:version, 0, 1) . '.' .  strpart(v:version, 2)
@@ -51,12 +61,20 @@ function! s:Validate()
   call s:FeatureValidate()
 endfunction 
 
+" ----------------------------------------------------------------------------
 " Determines the version and exit early if unsupport vim.
+" 
+" Early determines for the unsupport vim.
+" ----------------------------------------------------------------------------
 if v:version < s:required_version
   finish
 endif
 
+" ----------------------------------------------------------------------------
 " Determines the vim features.
+"
+" FeatureValidate:
+" ----------------------------------------------------------------------------
 function! s:FeatureValidate()
   let errors = []
   " Determines 'compatible' option
@@ -105,7 +123,11 @@ function! s:FeatureValidate()
   echohl None
 endfunction 
 
+" ----------------------------------------------------------------------------
 " Determines the vimide vimfiles baseidr.
+"
+" VimideBaseDir:
+" ----------------------------------------------------------------------------
 function! s:VimideBaseDir() 
   if !exists('g:VimideBaseDir')
     let savewig = &wildignore
@@ -125,7 +147,11 @@ function! s:VimideBaseDir()
   return g:VimideBaseDir
 endfunction
 
+" ----------------------------------------------------------------------------
 " Initialized.
+"
+" Init:
+" ----------------------------------------------------------------------------
 function! s:Init() 
   let basedir = s:VimideBaseDir()
   if basedir == ''

@@ -23,11 +23,20 @@
 " 
 
 " ----------------------------------------------------------------------------
+"
 " Script Functions:
+"
 " ----------------------------------------------------------------------------
 
+" ----------------------------------------------------------------------------
 " Echos the supplied message at the supplied level with the specified
 " highlight.
+"
+" EchoLevel:
+"   message   - the specific message to echo.
+"   level     - the specific level for logging.
+"   highlight - the specific highlight for display.
+" ----------------------------------------------------------------------------
 function! s:EchoLevel(message, level, highlight)
   " don't echo if the message is 0, which signals an execute failure.
   if type(a:message) == g:NUMBER_TYPE && a:message == 0
@@ -60,10 +69,17 @@ function! s:EchoLevel(message, level, highlight)
 endfunction
 
 " ----------------------------------------------------------------------------
+"
 " Functions:
+"
 " ----------------------------------------------------------------------------
 
+" ----------------------------------------------------------------------------
 " Echos in trace level.
+"
+" EchoTrace:
+"   message - the specific message to trace.
+" ----------------------------------------------------------------------------
 function! vimide#print#EchoTrace(message, ...)
   if a:0 > 0
     call s:EchoLevel('(' . a:1 . 's) ' . a:message, 6, g:VIdeTraceHighlight)
@@ -72,33 +88,63 @@ function! vimide#print#EchoTrace(message, ...)
   endif
 endfunction
 
+" ----------------------------------------------------------------------------
 " Echos in debug level.
+"
+" EchoDebug:
+"   message - the specific message to echo.
+" ----------------------------------------------------------------------------
 function! vimide#print#EchoDebug(message)
   call s:EchoLevel(a:message, 5, g:VIdeDebugHighlight)
 endfunction
 
+" ----------------------------------------------------------------------------
 " Echos in info level.
+"
+" EchoInfo:
+"   message - the specific message to echo.
+" ----------------------------------------------------------------------------
 function! vimide#print#EchoInfo(message)
   call s:EchoLevel(a:message, 4, g:VIdeInfoHighlight)
 endfunction
 
+" ----------------------------------------------------------------------------
 " Echos in warning level.
+"
+" EchoWarning:
+"   message - the specific message to echo.
+" ----------------------------------------------------------------------------
 function! vimide#print#EchoWarning(message)
   call s:EchoLevel(a:message, 3, g:VIdeWarningHighlight)
 endfunction
 
+" ----------------------------------------------------------------------------
 " Echos in error level.
+"
+" EchoError:
+"   message - the specific message to echo.
+" ----------------------------------------------------------------------------
 function! vimide#print#EchoError(message)
   call s:EchoLevel(a:message, 2, g:VIdeErrorHighlight)
 endfunction
 
+" ----------------------------------------------------------------------------
 " Echos in fatal level.
+"
+" EchoFatal:
+"   message - the specific message to echo.
+" ----------------------------------------------------------------------------
 function! vimide#print#EchoFatal(message)
   call s:EchoLevel(a:message, 1, g:VIdeFatalHighlight)
 endfunction
 
+" ----------------------------------------------------------------------------
 " Echos a message using the info highlight regardless of what log level is
 " set.
+"
+" Echo:
+"   message - the specific message to echo.
+" ----------------------------------------------------------------------------
 function! vimide#print#Echo(message)
   if a:message != '0' && g:VIdeLogLevel > 0
     exec 'echohl ' . g:VIdeInfoHighlight

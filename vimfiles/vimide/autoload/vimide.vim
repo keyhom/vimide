@@ -23,7 +23,9 @@
 " 
 
 " ----------------------------------------------------------------------------
+"
 " Script Variables:
+"
 " ----------------------------------------------------------------------------
 
 " default server informations.
@@ -40,11 +42,17 @@ else
   let s:libfilename = 'libxget.so'
 endif
 
-" ------------------------------------------------------------------------------
+" ----------------------------------------------------------------------------
+"
 " Script Functions:
-" ------------------------------------------------------------------------------
+"
+" ----------------------------------------------------------------------------
 
+" ----------------------------------------------------------------------------
 " Determines the location for libxget.so/libxget.dll
+"
+" GetLibXgetPath:
+" ----------------------------------------------------------------------------
 function! s:GetLibXgetPath()
   " find the libxget.so/libxget.dll in runtimpath or LD_LIBRARY_PATH or Env.
   if !exists('g:VIde_LibXget') || g:VIde_LibXget == ''
@@ -83,10 +91,16 @@ function! s:GetLibXgetPath()
 endfunction
 
 " ----------------------------------------------------------------------------
+"
 " Functions:
+"
 " ----------------------------------------------------------------------------
 
+" ----------------------------------------------------------------------------
 " Ping the vimide server for alive determines.
+"
+" Ping:
+" ----------------------------------------------------------------------------
 function! vimide#Ping()
   let result = vimide#Execute(s:command_ping, {'raw': 0})
 
@@ -101,14 +115,15 @@ function! vimide#Ping()
   endif
 endfunction
 
+" ----------------------------------------------------------------------------
 " Executes the command by server.
+"
+" Execute:
+"   options (optional) - the specific options setting to execute.
+"     |- exec: 1 to execute the command using execute instead of system.
+"     |- raw : 1 to get the result without evaluating as json.
+" ----------------------------------------------------------------------------
 function! vimide#Execute(command, ...)
-  " Optional args:
-  "   options: {
-  "     exec: 1 to execute the command using execute instead of system.
-  "     raw:  1 to get the result without evaluating as json.
-  "   }
-
   if g:VIdeDisable
     return 0
   endif
@@ -127,9 +142,10 @@ function! vimide#Execute(command, ...)
       let command .= a:command
 
       " escape specific characters.
-      let command = escape(command, '&%!')
-      let command = escape(command, '%!')
-      let command = escape(command, '#')
+      let command = substitute(command, '\s', '%20', 'g')
+      " let command = escape(command, '&%!')
+      " let command = escape(command, '%!')
+      " let command = escape(command, '#')
       silent! let result = libcall(libfile, 'xget', command)
     endif
   endif
