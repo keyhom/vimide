@@ -100,7 +100,7 @@ public class ProjectImportServlet extends GenericVimideHttpServlet {
                 if (project.exists()) {
                     // already exists.
                     sb.append(NLS.bind(CoreMessages.project_name_exists,
-                            project.getName()));
+                            project.getName(), workspaceLoc));
                     resp.writeAsJson(sb.toString());
                     return;
                 } else {

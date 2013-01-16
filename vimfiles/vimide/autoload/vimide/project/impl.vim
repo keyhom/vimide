@@ -188,7 +188,7 @@ function! vimide#project#impl#ProjectList(...)
       else
         let messages .= ' [Closed] '
       endif
-      let messages .= "\n  " . path . "\n"
+      let messages .= " - " . path . "\n"
 
       let index = index + 1
     endfor

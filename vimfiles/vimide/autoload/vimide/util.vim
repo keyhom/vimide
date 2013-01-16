@@ -50,4 +50,40 @@ function! vimide#util#LegalPath(path)
   return path
 endfunction
 
+" ----------------------------------------------------------------------------
+" Execute a command without the specific autocommands.
+"
+" ExecWithoutAutocmds:
+"   cmd - the command to execute.
+"   ... - the events to disable.
+" ----------------------------------------------------------------------------
+function! vimide#util#ExecWithoutAutocmds(cmd, ...)
+  let save_opt = &eventignore
+  " disabled the supplied autocommands first.
+  let events = len(a:000) == 0 ? 'all' : a:000[0]
+  exec 'set eventignore=' . events
+  try
+    exec a:cmd
+  finally
+    let &eventignore = save_opt
+  endtry
+endfunction
+
+" ----------------------------------------------------------------------------
+" Pad the supplied string.
+"
+" Pad:
+"   string  - the supplied string.
+"   length  - the length to format.
+"   ...     - the character to pad.
+" ----------------------------------------------------------------------------
+function! vimide#util#Pad(string, length, ...)
+  let char = a:0 > 0 ? a:0 : ' '
+  let string = a:string
+  while strlen(string) < a:length
+    let string .= char
+  endwhile
+  return string
+endfunction
+
 " vim:ft=vim
