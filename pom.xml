@@ -18,6 +18,7 @@
   <properties>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <site.root.url>${project.url}</site.root.url>
+    <site.port>8082</site.port>
     <apiDomain/>
   </properties>
 
@@ -175,7 +176,7 @@
         </property>
       </activation>
       <properties>
-        <site.root.url>http://localhost:8082</site.root.url>
+        <site.root.url>http://localhost:${site.port}</site.root.url>
         <apiDomain>http://localhost:3333</apiDomain>
       </properties>
       <build>
@@ -189,7 +190,7 @@
                 <webAppSourceDirectory>${project.build.directory}/site</webAppSourceDirectory>
                 <connectors>
                   <connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
-                    <port>8082</port>
+                    <port>${site.port}</port>
                     <maxIdleTime>400000</maxIdleTime>
                   </connector>
                 </connectors>
