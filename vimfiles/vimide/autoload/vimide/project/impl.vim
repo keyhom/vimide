@@ -77,6 +77,29 @@ function! vimide#project#impl#PrintCurrentProjectName()
 endfunction
 
 " ----------------------------------------------------------------------------
+" Change dir to the specific project location.
+"
+" ProjectLCD:
+"   project - the specific project to forward.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectLCD(project)
+  if a:project != ''
+    let command = substitute(s:command_project_info, '<project>', a:project, '')
+    let result = vimide#Execute(command)
+    if type(result) == g:DICT_TYPE
+      let location = vimide#util#LegalPath(result.path)
+      if location != ''
+        exec 'lcd ' . location
+      else
+        call vimide#print#EchoError("Unable to determine the location of the project: " . a:project)
+      endif
+    endif
+  else
+    call vimide#print#EchoError("Please supply the specific project name to chdir.")
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
 " Retrieves and print out the supplied or focus project informations.
 "
 " ProjectInfo:
@@ -176,21 +199,27 @@ function! vimide#project#impl#ProjectList(...)
     let messages = ''
     let index = 1
 
-    for info in result
+    let table = []
 
+    for info in result
+      let row = []
       let name = get(info, 'name')
       let open = get(info, 'open')
       let path = get(info, 'path')
 
-      let messages .= index . ': ' . name
-      if open == 'true'
-        let messages .= ' [Opened] '
-      else
-        let messages .= ' [Closed] '
-      endif
-      let messages .= " - " . path . "\n"
+      silent! call add(row, index)
+      silent! call add(row, name)
+      silent! call add(row, open == 'true' ? '[Opened]' : '[Closed]')
+      silent! call add(row, path)
+      silent! call add(table, row)
 
       let index = index + 1
+    endfor
+
+    let table = vimide#util#PadTable(table)
+
+    for row in table
+      let messages .= row[0] . ': ' . row[1] . ' ' . row[2] . ' => ' . row[3] . "\n"
     endfor
 
     call vimide#print#EchoInfo(messages)
@@ -255,11 +284,13 @@ endfunction
 function! vimide#project#impl#ProjectImport(path)
   let path = a:path
   if path != ''
-    let path = vimide#util#LegalPath(path)
+    let path = vimide#util#LegalPath(path, 2)
     let command = substitute(s:command_project_import, '<file>', path, '')
     let result = vimide#Execute(command)
     if type(result) == g:STRING_TYPE
       call vimide#print#Echo(result)
+    else
+      call vimide#print#Echo("Unexpected result response format.")
     endif
   endif
 endfunction

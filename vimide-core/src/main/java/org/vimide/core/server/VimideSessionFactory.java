@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.mina.core.service.IoHandler;
 
 /**
- * An implemetation of Vimide's session factory.
+ * An implementation of Vimide's session factory.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */

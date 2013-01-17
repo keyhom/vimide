@@ -39,12 +39,28 @@
 "
 " LegalPath:
 "   path  - the specific path to make legal, specify to cygwin.
+"   ...
+"     |- 0 auto mode.
+"     |- 1 windows to cygwin
+"     \- 2 cygwin to windows
 " ----------------------------------------------------------------------------
-function! vimide#util#LegalPath(path)
+function! vimide#util#LegalPath(path, ...)
   let path = a:path
-  if has('win32unix') && a:path =~ '^/cygdrive'
-    let path = substitute(a:path, '^/cygdrive/', '', '')
-    let path = substitute(path, '^\(\w\)/', '\1:/', '')
+
+  if has('win32unix') 
+    if a:0 == 0 || a:000[0] == 0 || a:000[0] == 2
+      if a:path =~ '^/cygdrive' " cgywin to windows.
+        let path = substitute(a:path, '^/cygdrive/', '', '')
+        let path = substitute(path, '^\(\w\)/', '\1:/', '')
+      endif
+    endif
+
+    if a:0 == 0 || a:000[0] == 0 || a:000[0] == 1
+      if a:path =~ '^\w\:' " windows to cygwin.
+        let path = substitute(a:path, '^\(\w\)\:', '/cygdrive/\1', '')
+        let path = substitute(path, '\', '/', 'g')
+      endif
+    endif
   endif
 
   return path
@@ -84,6 +100,58 @@ function! vimide#util#Pad(string, length, ...)
     let string .= char
   endwhile
   return string
+endfunction
+
+" ----------------------------------------------------------------------------
+" Pad the specific table to the same string length every col.
+"
+" PadTable:
+"   table - the specific table to pad.
+" ----------------------------------------------------------------------------
+function! vimide#util#PadTable(table)
+  let table = a:table
+  if type(table) == g:LIST_TYPE
+    " Determines the max length for every col.
+    let nums = []
+    for row in table
+      if type(row) == g:LIST_TYPE
+        let i = 0
+        for col in row
+          if len(nums) == i
+            silent! call add(nums, 0)
+          endif
+
+          let l = strlen(col)
+          let nums[i] = l > nums[i] ? l : nums[i]
+          let i = i + 1
+        endfor
+      elseif type(row) == g:STRING_TYPE
+        if len(nums) == i
+          silent! call add(nums, 0)
+        endif
+
+        let l = strlen(row)
+        let nums[0] = l > nums[0] ? l : nums[0]
+      endif
+    endfor
+
+    " Performs the pad action to every col.
+    for row in table
+      if type(row) == g:LIST_TYPE
+        let i = 0
+        for col in row
+          let row[i] = vimide#util#Pad(col, nums[i])
+          let i = i + 1
+        endfor
+      elseif type(row) == g:STRING_TYPE
+        let row = vimide#util#Pad(row, nums[0])
+      endif
+    endfor
+
+    return table
+  else
+    return []
+  endif
 endfunction
 
 " vim:ft=vim

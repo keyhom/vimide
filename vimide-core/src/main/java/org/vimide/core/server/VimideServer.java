@@ -150,7 +150,7 @@ public abstract class VimideServer {
     /**
      * Sets the session factory.
      * 
-     * @param sessionFactory the session factory implemetation.
+     * @param sessionFactory the session factory implementation.
      * @return reference of this.
      */
     public VimideServer setSessionFactory(VimideSessionFactory sessionFactory) {

@@ -31,7 +31,7 @@ import org.apache.mina.core.session.IoSession;
 import com.google.common.base.Strings;
 
 /**
- * Generic implemetation of Vimide's server session.
+ * Generic implementation of Vimide's server session.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
