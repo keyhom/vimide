@@ -73,7 +73,7 @@ command! -nargs=0 Prefreshall
       \ :call vimide#project#impl#ProjectRefreshAll()
 
 " ProjectCD:
-command! -nargs=1 
+command! -nargs=*
       \ -complete=customlist,vimide#project#impl#CommandCompleteSingleProject
       \ Pcd :call vimide#project#impl#ProjectLCD(<f-args>)
 

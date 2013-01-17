@@ -80,11 +80,18 @@ endfunction
 " Change dir to the specific project location.
 "
 " ProjectLCD:
-"   project - the specific project to forward.
+"   project (optional) - the specific project to forward.
 " ----------------------------------------------------------------------------
-function! vimide#project#impl#ProjectLCD(project)
-  if a:project != ''
-    let command = substitute(s:command_project_info, '<project>', a:project, '')
+function! vimide#project#impl#ProjectLCD(...)
+  let project = ''
+  if a:0 > 0
+    let project = a:1
+  else
+    let project = vimide#project#impl#GetProject(expand('%:p'))
+  endif
+
+  if project != ''
+    let command = substitute(s:command_project_info, '<project>', project, '')
     let result = vimide#Execute(command)
     if type(result) == g:DICT_TYPE
       let location = vimide#util#LegalPath(result.path)

@@ -96,6 +96,7 @@ public class VimEditor extends TextEditor {
 
     private VimInstance vimInstance;
     private int bufferId;
+    @SuppressWarnings("unused")
     private IDocument document;
     private VimDocumentProvider documentProvider;
 

@@ -25,7 +25,7 @@ package org.vimide.eclipse.core.service;
 import org.eclipse.core.resources.IProject;
 
 /**
- * Default implemetation of project service, process by normal project resource.
+ * Default implementation of project service, process by normal project resource.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */

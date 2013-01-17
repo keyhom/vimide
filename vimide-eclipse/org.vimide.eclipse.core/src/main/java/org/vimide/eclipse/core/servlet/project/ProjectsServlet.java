@@ -41,7 +41,7 @@ import com.google.common.collect.Maps;
 
 /**
  * Request which obtains a list of projects and project paths for use by clients
- * to detemine which project a file belongs to.
+ * to determine which project a file belongs to.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
