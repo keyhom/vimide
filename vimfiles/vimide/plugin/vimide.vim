@@ -98,15 +98,19 @@ endif
 " ----------------------------------------------------------------------------
 
 if !exists(':PingVIde')
-  command PingVIde call vimide#Ping()
+  command PingVIde :call vimide#Ping()
 endif
 
 if !exists(':DisableVIde')
-  command DisableVIde call <SID>Disable()
+  command DisableVIde :call <SID>Disable()
 endif
 
 if !exists(':EnableVIde')
-  command EnableVIde call <SID>Enable()
+  command EnableVIde :call <SID>Enable()
+endif
+
+if !exists(':Jobs')
+  command Jobs :call vimide#Jobs()
 endif
 
 " ----------------------------------------------------------------------------

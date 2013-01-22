@@ -34,6 +34,7 @@ let s:server_port = "3333"
 
 " default command declartions.
 let s:command_ping = "/ping"
+let s:command_jobs = "/jobs"
 
 " default library informations.
 if has('win32') || has('win64') || has('win32unix')
@@ -112,6 +113,41 @@ function! vimide#Ping()
     let str = "Eclipse: " . ev . "\n"
     let str .= "Vimide : " . vv
     call vimide#print#EchoInfo(str)
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Inspects the job queue.
+"
+" Jobs:
+" ----------------------------------------------------------------------------
+function! vimide#Jobs()
+  let result = vimide#Execute(s:command_jobs)
+
+  let table = []
+  let index = 0
+  if type(result) == g:LIST_TYPE
+    for o in result
+      let index = index + 1
+      let row = []
+      call add(row, index)
+      call add(row, o.status)
+      call add(row, o.job)
+      call add(table, row)
+    endfor
+
+    call vimide#util#PadTable(table)
+
+    let messages = 'Total Jobs: ' . index . "\n"
+
+    for row in table
+      let messages .= "  " . row[0] . ' '
+      let messages .= '[ ' . row[1] . ' ] '
+      let messages .= row[2]
+      let messages .= "\n"
+    endfor
+
+    call vimide#print#Echo(messages)
   endif
 endfunction
 
