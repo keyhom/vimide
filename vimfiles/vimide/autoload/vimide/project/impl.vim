@@ -113,7 +113,13 @@ endfunction
 "   project - the specific project to determine.
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectInfo(project)
-  let project = a:project
+  let project = ''
+  let _arr = split(a:project, '\s')
+
+  if len(_arr) > 0
+    let project = _arr[0]
+  endif
+  
   if project == ''
     let project = vimide#project#impl#GetProject(expand('%:p'))
   endif
@@ -289,7 +295,7 @@ endfunction
 "   path  - the path of the specific project located at.
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectImport(path)
-  let path = a:path
+  let path = fnamemodify(expand(a:path), ':p:h')
   if path != ''
     let path = vimide#util#LegalPath(path, 2)
     let command = substitute(s:command_project_import, '<file>', path, '')

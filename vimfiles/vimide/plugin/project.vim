@@ -35,7 +35,7 @@ command! -nargs=? Project :call vimide#project#impl#PrintCurrentProjectName()
 command! -nargs=? Plist :call vimide#project#impl#ProjectList('<args>')
 
 " ProjectInfo:
-command! -nargs=? 
+command! -nargs=?
       \ -complete=customlist,vimide#project#impl#CommandCompleteSingleProject
       \ Pinfo :call vimide#project#impl#ProjectInfo('<args>')
 
@@ -46,7 +46,7 @@ command! -nargs=+
 
 " ProjectImport:
 command! -nargs=1 -complete=dir
-      \ Pimport :call vimide#project#impl#ProjectImport('<args>')
+      \ Pimport :call vimide#project#impl#ProjectImport(<f-args>)
 
 " ProjectDelete:
 command! -nargs=+
