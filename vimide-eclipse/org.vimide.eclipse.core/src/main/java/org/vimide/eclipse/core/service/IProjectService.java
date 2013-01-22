@@ -32,7 +32,7 @@ import org.eclipse.core.resources.IProject;
 public interface IProjectService {
 
     /**
-     * Refreshs the supplied project resource.
+     * Refreshes the supplied project resource.
      * 
      * @param project the project.
      */
