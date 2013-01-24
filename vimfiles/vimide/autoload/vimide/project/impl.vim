@@ -336,19 +336,25 @@ endfunction
 " Refreshs the supplied projects.
 "
 " ProjectRefresh:
+"   bang          - the specific bang to set for all.
 "   projects[...] - the specific projects to refresh.
 " ----------------------------------------------------------------------------
-function! vimide#project#impl#ProjectRefresh(...)
-  let projects = copy(a:000)
-  if a:0 == 0
-    " determines the current project by auto.
-    let _p = vimide#project#impl#GetProject(expand('%:p'))
-    if _p == ''
-      " can't determines the current project.
-      call vimide#project#impl#UnableToDetermineProject()
-      return
+function! vimide#project#impl#ProjectRefresh(bang, ...)
+  let projects = []
+  if a:bang == '!'
+    let projects = vimide#project#impl#GetProjectNames()
+  else
+    let projects = copy(a:000)
+    if a:0 == 0
+      " determines the current project by auto.
+      let _p = vimide#project#impl#GetProject(expand('%:p'))
+      if _p == ''
+        " can't determines the current project.
+        call vimide#project#impl#UnableToDetermineProject()
+        return
+      endif
+      call add(projects, _p)
     endif
-    call add(projects, _p)
   endif
 
   if len(projects) > 0
@@ -364,26 +370,6 @@ function! vimide#project#impl#ProjectRefresh(...)
     if type(result) == g:STRING_TYPE
       call vimide#print#Echo(result)
     endif
-  endif
-endfunction
-
-" ----------------------------------------------------------------------------
-" Refreshs the all projects.
-"
-" ProjectRefreshAll:
-" ----------------------------------------------------------------------------
-function! vimide#project#impl#ProjectRefreshAll()
-  let projects = vimide#project#impl#GetProjectNames()
-  if len(projects) > 0
-    let command = ''
-    for _p in projects
-      if strlen(command) > 0
-        let command .= ','
-      endif
-      let command .= '"' . _p . '"'
-    endfor
-    let command = 'call vimide#project#impl#ProjectRefresh(' . command . ')'
-    execute command
   endif
 endfunction
 
