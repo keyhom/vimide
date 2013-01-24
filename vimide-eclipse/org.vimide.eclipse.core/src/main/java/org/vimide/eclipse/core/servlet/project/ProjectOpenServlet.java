@@ -39,6 +39,7 @@ import org.vimide.eclipse.core.CoreMessages;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 
 /**
+ * Request to open a project.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */

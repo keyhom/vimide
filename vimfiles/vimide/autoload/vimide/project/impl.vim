@@ -37,6 +37,7 @@ let s:command_project_open = "/project_open"
 let s:command_project_import = "/project_import?file=<file>"
 let s:command_project_delete = "/project_delete"
 let s:command_project_refresh = "/project_refresh"
+let s:command_project_refresh_File = "/project_refresh_file?project=<project>&file=<file>"
 
 " ----------------------------------------------------------------------------
 "
@@ -383,6 +384,23 @@ function! vimide#project#impl#ProjectRefreshAll()
     endfor
     let command = 'call vimide#project#impl#ProjectRefresh(' . command . ')'
     execute command
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Refresh the supplied project file. This function will just send a sync
+" request to the server and having empty response.
+"
+" ProjectRefreshFile:
+"   project - the specific project that the file was located at.
+"   file    - the specific file to refresh.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectRefreshFile(project, file)
+  if a:project != '' && a:file != ''
+    let file = vimide#util#LegalPath(a:file)
+    let command = substitute(s:command_project_refresh_File, '<project>', a:project, '')
+    let command = substitute(command, '<file>', file, '')
+    silent! call vimide#Execute(command)
   endif
 endfunction
 

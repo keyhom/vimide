@@ -42,6 +42,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 /**
+ * Requests to inspect the information of project.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
