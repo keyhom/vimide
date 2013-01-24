@@ -73,4 +73,9 @@ command! -nargs=*
       \ -complete=customlist,vimide#project#impl#CommandCompleteSingleProject
       \ Pcd :call vimide#project#impl#ProjectLCD(<f-args>)
 
+" ProjectBuild:
+command! -nargs=* -bang
+      \ -complete=customlist,vimide#project#impl#CommandCompleteProjectBuild
+      \ Pbuild :call vimide#project#impl#ProjectBuild('<bang>', '<args>')
+
 " vim:ft=vim

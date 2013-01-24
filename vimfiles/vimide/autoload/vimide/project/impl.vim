@@ -38,6 +38,7 @@ let s:command_project_import = "/project_import?file=<file>"
 let s:command_project_delete = "/project_delete"
 let s:command_project_refresh = "/project_refresh"
 let s:command_project_refresh_File = "/project_refresh_file?project=<project>&file=<file>"
+let s:command_project_build = "/project_build?type=<type>" " /project_build?type=<type>&all=<all>&project=<project1>&project=<project2>
 
 " ----------------------------------------------------------------------------
 "
@@ -74,6 +75,61 @@ function! vimide#project#impl#PrintCurrentProjectName()
     call vimide#print#EchoInfo("You're just focus in project: " . projectName)
   else
     call vimide#project#impl#UnableToDetermineProject()
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Build projects.
+"
+" ProjectBuild:
+"   bang    - the specific bang to set for all projects.
+"   cmdLine - the command line for building project.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#ProjectBuild(bang, cmdLine)
+  let projects = []
+  let all = 0
+  if a:bang == '!'
+    " for building all projects.
+    let projects = vimide#project#impl#GetProjectNames()
+    let all = 1
+  else
+    " Parses first argument as the specific project from the command line.
+    let project = substitute(a:cmdLine, '^\([0-9a-zA-Z_-]\+\)\s\+.\+', '\1', '')
+    silent! call add(projects, project)
+  endif
+
+  " Parses the build type.
+  let typeName = substitute(a:cmdLine, '.*-t\s\+\(.\+\)\s*', '\1', '')
+
+  if typeName == ''
+    let typeName = 'auto'
+  endif
+
+  " Sets the default build type to 9 (auto).
+  let type = 9
+
+  if typeName == 'full'
+    let type = 6
+  elseif typeName == 'increment'
+    let type = 10
+  elseif typeName == 'clean'
+    let type = 11
+  endif
+
+  if len(projects)
+    let command = substitute(s:command_project_build, '<type>', type, '')
+    if all
+      let command .= '&all=1'
+    else
+      for project in projects
+        let command .= '&project=' . project
+      endfor
+    endif
+
+    let result = vimide#Execute(command)
+    if type(result) == g:STRING_TYPE
+      call vimide#print#Echo(result)
+    endif
   endif
 endfunction
 
@@ -503,6 +559,41 @@ function! vimide#project#impl#CommandCompleteProjectByNature(argLead, cmdLine, c
 
   call map(projects, 'escape(v:val, " ")')
   return projects
+endfunction
+
+" ----------------------------------------------------------------------------
+" Custom command completion for project builds.
+"
+" CommandCompleteProjectBuild:
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#CommandCompleteProjectBuild(argLead, cmdLine, cursorPos)
+  " against no space for cmdline.
+  if a:cmdLine !~ '\s'
+    return []
+  endif
+
+  " determines all <bang> whether specified.
+  if a:cmdLine !~ '^[0-9a-zA-Z_-]\+[!]'
+      let projects = vimide#project#impl#CommandCompleteSingleProject(a:argLead, a:cmdLine, a:cursorPos)
+      if len(projects) > 0
+        return projects
+      endif
+  endif
+
+  " provided the type options.
+  if a:cmdLine !~ '.* -t\s\+.*'
+    return ['-t']
+  endif
+
+  " completation the value for type.
+  let stype = substitute(a:cmdLine, '.* -t\s\+\(.\+\)', '\1', '')
+  let options = ['auto', 'increment', 'full', 'clean']
+
+  if stype != '' && stype != a:cmdLine
+    call filter(options, 'v:val =~ "^' . stype . '"')
+  endif
+
+  return options
 endfunction
 
 " vim:ft=vim
