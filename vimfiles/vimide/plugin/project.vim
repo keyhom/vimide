@@ -64,17 +64,18 @@ command! -nargs=+
       \ Popen :call vimide#project#impl#ProjectOpen(<f-args>)
 
 " ProjectRefresh:
-command! -nargs=*
+command! -nargs=* -bang
       \ -complete=customlist,vimide#project#impl#CommandCompleteMultiProject
-      \ Prefresh :call vimide#project#impl#ProjectRefresh(<f-args>)
-
-" ProjectRefreshAll:
-command! -nargs=0 Prefreshall
-      \ :call vimide#project#impl#ProjectRefreshAll()
+      \ Prefresh :call vimide#project#impl#ProjectRefresh('<bang>', <f-args>)
 
 " ProjectCD:
 command! -nargs=*
       \ -complete=customlist,vimide#project#impl#CommandCompleteSingleProject
       \ Pcd :call vimide#project#impl#ProjectLCD(<f-args>)
+
+" ProjectBuild:
+command! -nargs=* -bang
+      \ -complete=customlist,vimide#project#impl#CommandCompleteProjectBuild
+      \ Pbuild :call vimide#project#impl#ProjectBuild('<bang>', '<args>')
 
 " vim:ft=vim
