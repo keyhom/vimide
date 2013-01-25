@@ -86,22 +86,15 @@ endfunction
 "   cmdLine - the command line for building project.
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectBuild(bang, cmdLine)
-  let projects = []
-  let all = 0
-  if a:bang == '!'
-    " for building all projects.
-    let projects = vimide#project#impl#GetProjectNames()
-    let all = 1
-  else
-    " Parses first argument as the specific project from the command line.
-    let project = substitute(a:cmdLine, '^\([0-9a-zA-Z_-]\+\)\s\+.\+', '\1', '')
-    silent! call add(projects, project)
-  endif
+  call vimide#print#Echo('Building projects...')
 
   " Parses the build type.
-  let typeName = substitute(a:cmdLine, '.*-t\s\+\(.\+\)\s*', '\1', '')
+  let typeName = substitute(a:cmdLine, '.*-t\s\+\([0-9a-zA-Z_-]\+\)', '\1', '')
 
-  if typeName == ''
+  echo typeName
+  return
+
+  if typeName == '' || typeName == a:cmdLine
     let typeName = 'auto'
   endif
 
@@ -114,6 +107,25 @@ function! vimide#project#impl#ProjectBuild(bang, cmdLine)
     let type = 10
   elseif typeName == 'clean'
     let type = 11
+  endif
+
+  let cmdLine = substitute(a:cmdLine, '\s*-t\s\+.\+\s*', '', '')
+  
+  let projects = []
+  let all = 0
+  if a:bang == '!'
+    " for building all projects.
+    let projects = vimide#project#impl#GetProjectNames()
+    let all = 1
+  else
+    " Parses first argument as the specific project from the command line.
+    let project = substitute(cmdLine, '^\([0-9a-zA-Z_-]\+\)\s\+.\+', '\1', '')
+
+    if project == '' 
+      let project = vimide#project#impl#GetProject(expand('%:p'))
+    elseif project != '' && vimide#project#impl#IsProjectExists(project)
+      silent! call add(projects, project)
+    endif
   endif
 
   if len(projects)
@@ -130,6 +142,8 @@ function! vimide#project#impl#ProjectBuild(bang, cmdLine)
     if type(result) == g:STRING_TYPE
       call vimide#print#Echo(result)
     endif
+  else
+    call vimide#print#EchoError("No illegal project was detected.")
   endif
 endfunction
 
@@ -170,6 +184,7 @@ endfunction
 "   project - the specific project to determine.
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectInfo(project)
+  call vimide#print#Echo('Requesting project information...')
   let project = ''
   let _arr = split(a:project, '\s')
 
@@ -226,12 +241,28 @@ function! vimide#project#impl#GetProjectNames()
 endfunction
 
 " ----------------------------------------------------------------------------
+" Determines the supplied project if exists.
+"
+" IsProjectExists:
+"   project - the specific project to determine.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#IsProjectExists(project)
+  if a:project != ''
+    let projects = vimide#project#impl#GetProjectNames()
+    let projects = filter(projects, 'v:val == "' . a:project . '"')
+    return len(projects) > 0
+  endif
+  return 0
+endfunction
+
+" ----------------------------------------------------------------------------
 " Retrieves and print out the list of projects.
 "
 " ProjectList:
 "   natures (optional) - the natures to filtering. sepa with comma.
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectList(...)
+  call vimide#print#Echo('Listing projects...')
   let command = s:command_project_list
 
   let queryString = ''
@@ -306,6 +337,7 @@ endfunction
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectClose(...)
   if a:0 > 0
+    call vimide#print#Echo('Closing projects ... ')
     let queryString = ''
     for _p in a:000
       if strlen(queryString)
@@ -330,6 +362,7 @@ endfunction
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectDelete(...)
   if a:0 > 0
+    call vimide#print#Echo('Deleting projects ... ')
     let queryString = ''
     for _p in a:000
       if strlen(queryString)
@@ -352,6 +385,7 @@ endfunction
 "   path  - the path of the specific project located at.
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectImport(path)
+  call vimide#print#Echo('Importing projects ...')
   let path = fnamemodify(expand(a:path), ':p:h')
   if path != ''
     let path = vimide#util#LegalPath(path, 2)
@@ -373,6 +407,7 @@ endfunction
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectOpen(...)
   if a:0 > 0
+    call vimide#print#Echo('Opening projects ...')
     let queryString = ''
     for _p in a:000
       if strlen(queryString)
@@ -396,6 +431,7 @@ endfunction
 "   projects[...] - the specific projects to refresh.
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectRefresh(bang, ...)
+  call vimide#print#Echo('Refreshing projects ...')
   let projects = []
   if a:bang == '!'
     let projects = vimide#project#impl#GetProjectNames()
@@ -574,8 +610,9 @@ function! vimide#project#impl#CommandCompleteProjectBuild(argLead, cmdLine, curs
 
   " determines all <bang> whether specified.
   if a:cmdLine !~ '^[0-9a-zA-Z_-]\+[!]'
-      let projects = vimide#project#impl#CommandCompleteSingleProject(a:argLead, a:cmdLine, a:cursorPos)
+      let projects = vimide#project#impl#CommandCompleteMultiProject(a:argLead, a:cmdLine, a:cursorPos)
       if len(projects) > 0
+        silent! call add(projects, '-t')
         return projects
       endif
   endif

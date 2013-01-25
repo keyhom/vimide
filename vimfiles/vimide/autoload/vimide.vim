@@ -103,6 +103,8 @@ endfunction
 " Ping:
 " ----------------------------------------------------------------------------
 function! vimide#Ping()
+  call vimide#print#EchoInfo('Ping...')
+
   let result = vimide#Execute(s:command_ping, {'raw': 0})
 
   if type(result) == g:STRING_TYPE
@@ -122,6 +124,8 @@ endfunction
 " Jobs:
 " ----------------------------------------------------------------------------
 function! vimide#Jobs()
+  call vimide#print#EchoInfo('Inspecting jobs...')
+
   let result = vimide#Execute(s:command_jobs)
 
   let table = []
