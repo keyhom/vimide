@@ -72,7 +72,7 @@ endfunction
 function! vimide#project#impl#PrintCurrentProjectName()
   let projectName = vimide#project#impl#GetProject(expand('%:p'))
   if projectName != ''
-    call vimide#print#EchoInfo("You're just focus in project: " . projectName)
+    call vimide#print#Echo("You're just focus in project: " . projectName)
   else
     call vimide#project#impl#UnableToDetermineProject()
   endif
@@ -86,20 +86,22 @@ endfunction
 "   cmdLine - the command line for building project.
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#ProjectBuild(bang, cmdLine)
-  call vimide#print#Echo('Building projects...')
-
-  " Parses the build type.
-  let typeName = substitute(a:cmdLine, '.*-t\s\+\([0-9a-zA-Z_-]\+\)', '\1', '')
-
-  echo typeName
-  return
-
-  if typeName == '' || typeName == a:cmdLine
-    let typeName = 'auto'
-  endif
-
   " Sets the default build type to 9 (auto).
   let type = 9
+  let typeName = 'auto'
+
+  let args = vimide#util#ToList(a:cmdLine)
+
+  if len(args) > 0
+    if args[0] == '-t'
+      if len(args) > 1
+        let typeName = args[1]
+      else
+        return
+      endif
+      call remove(args, 0, 1)
+    endif
+  endif
 
   if typeName == 'full'
     let type = 6
@@ -109,8 +111,9 @@ function! vimide#project#impl#ProjectBuild(bang, cmdLine)
     let type = 11
   endif
 
-  let cmdLine = substitute(a:cmdLine, '\s*-t\s\+.\+\s*', '', '')
-  
+  " starting to build phase.
+  call vimide#print#Echo('Building projects...')
+
   let projects = []
   let all = 0
   if a:bang == '!'
@@ -118,13 +121,21 @@ function! vimide#project#impl#ProjectBuild(bang, cmdLine)
     let projects = vimide#project#impl#GetProjectNames()
     let all = 1
   else
-    " Parses first argument as the specific project from the command line.
-    let project = substitute(cmdLine, '^\([0-9a-zA-Z_-]\+\)\s\+.\+', '\1', '')
-
-    if project == '' 
+    " if no project supplied, auto determines the current project by the
+    " buffer file.
+    if len(args) == 0
       let project = vimide#project#impl#GetProject(expand('%:p'))
-    elseif project != '' && vimide#project#impl#IsProjectExists(project)
+      if project == ''
+        call vimide#project#impl#UnableToDetermineProject()
+        return
+      endif
       silent! call add(projects, project)
+    else
+      for _arg in args
+        if vimide#project#impl#IsProjectExists(_arg)
+          silent! call add(projects, _arg)
+        endif
+      endfor
     endif
   endif
 
@@ -603,31 +614,46 @@ endfunction
 " CommandCompleteProjectBuild:
 " ----------------------------------------------------------------------------
 function! vimide#project#impl#CommandCompleteProjectBuild(argLead, cmdLine, cursorPos)
+  let options = []
   " against no space for cmdline.
   if a:cmdLine !~ '\s'
-    return []
+    return options
   endif
 
   " determines all <bang> whether specified.
   if a:cmdLine !~ '^[0-9a-zA-Z_-]\+[!]'
-      let projects = vimide#project#impl#CommandCompleteMultiProject(a:argLead, a:cmdLine, a:cursorPos)
-      if len(projects) > 0
-        silent! call add(projects, '-t')
-        return projects
+    let projects = vimide#project#impl#CommandCompleteMultiProject(a:argLead, a:cmdLine, a:cursorPos)
+    if a:cmdLine =~ '^[0-9a-zA-Z_-]\+\s\+$'
+      call add(options, '-t')
+      for _p in projects
+        call add(options, _p)
+      endfor
+      return options
+    elseif a:cmdLine =~ '^[0-9a-zA-Z_-]\+\s\+-t\s*\zs'
+      let options = ['auto', 'increment', 'full', 'clean']
+      " completation the value for type.
+      let stype = substitute(a:cmdLine, '.* -t\s\+\(.\+\)', '\1', '')
+      if stype != '' && stype != a:cmdLine
+        call filter(options, 'v:val =~ "^' . stype . '"')
       endif
-  endif
+      if len(options) > 0
+        return options
+      endif
+    endif
 
-  " provided the type options.
-  if a:cmdLine !~ '.* -t\s\+.*'
-    return ['-t']
-  endif
+    return projects
+  else
+    " provided the type options.
+    if a:cmdLine !~ '.* -t\s\+.*'
+      return ['-t']
+    endif
 
-  " completation the value for type.
-  let stype = substitute(a:cmdLine, '.* -t\s\+\(.\+\)', '\1', '')
-  let options = ['auto', 'increment', 'full', 'clean']
-
-  if stype != '' && stype != a:cmdLine
-    call filter(options, 'v:val =~ "^' . stype . '"')
+    " completation the value for type.
+    let stype = substitute(a:cmdLine, '.* -t\s\+\(.\+\)', '\1', '')
+    let options = ['auto', 'increment', 'full', 'clean']
+    if stype != '' && stype != a:cmdLine
+      call filter(options, 'v:val =~ "^' . stype . '"')
+    endif
   endif
 
   return options

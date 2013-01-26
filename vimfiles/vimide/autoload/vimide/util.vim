@@ -154,4 +154,16 @@ function! vimide#util#PadTable(table)
   endif
 endfunction
 
+" ----------------------------------------------------------------------------
+" Parses the supplied argument line into a list of args.
+"
+" ToList:
+"   args  - the supplied argument line
+" ----------------------------------------------------------------------------
+function! vimide#util#ToList(args)
+  let args = split(a:args, '[^\\]\s\zs')
+  call map(args, 'substitute(v:val, "\\([^\\\\]\\)\\s\\+$", "\\1", "")')
+  return args
+endfunction
+
 " vim:ft=vim

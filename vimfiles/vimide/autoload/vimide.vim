@@ -103,18 +103,20 @@ endfunction
 " Ping:
 " ----------------------------------------------------------------------------
 function! vimide#Ping()
-  call vimide#print#EchoInfo('Ping...')
+  call vimide#print#Echo('Ping...')
 
   let result = vimide#Execute(s:command_ping, {'raw': 0})
 
-  if type(result) == g:STRING_TYPE
+  if type(result) == g:STRING_TYPE && result == ''
+    call vimide#print#EchoError("Failed to ping to server.")
+  elseif type(result) == g:STRING_TYPE
     call vimide#print#Echo(result)
   elseif type(result) == g:DICT_TYPE
     let ev = get(result, 'Eclipse')
     let vv = get(result, 'Vimide')
     let str = "Eclipse: " . ev . "\n"
     let str .= "Vimide : " . vv
-    call vimide#print#EchoInfo(str)
+    call vimide#print#Echo(str)
   endif
 endfunction
 
