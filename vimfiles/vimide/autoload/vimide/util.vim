@@ -166,4 +166,76 @@ function! vimide#util#ToList(args)
   return args
 endfunction
 
+" ----------------------------------------------------------------------------
+" Gets the byte offset for the current cursor position or supplied line, col.
+"
+" GetOffset:
+"   line(optional)  - the line number
+"   col(optional)   - the col number
+" ----------------------------------------------------------------------------
+function! vimide#util#GetOffset(...)
+  let lnum = a:0 > 0 ? a:000[0] : line('.')
+  let cnum = a:0 > 1 ? a:000[1] : col('.')
+  let offset = 0
+
+  " handle case where display encoding differs from the underlying file
+  " encoding.
+  if &fileencoding != '' && &encoding != '' && &fileencoding != &encoding
+    let prev = lnum - 1
+    if prev > 0
+      let lineEncoding = &ff == 'dos' ? "\r\n" : "\n"
+      " convert each line to the file encoding and sum their lengths
+      let offset = eval(
+            \ join(
+            \ map(
+            \ range(1, prev),
+            \ 'len(iconv(getline(v:val), &encoding, &fenc) . "' . lineEncoding . '")'),
+            \ '+'))
+    endif
+  else " normal case
+    let offset = line2byte(lnum) - 1
+  endif
+
+  let offset += cnum - 1
+  return offset
+endfunction
+
+" ----------------------------------------------------------------------------
+" Reload the current file using ":edit" and perform other operations based on
+" the options supplied.
+"
+" Reload:
+"   options
+"     |-  retab: Issue a retab of the file taking care of preserving
+"     &expandtab before executing the edit to keep indent detection plugins
+"     from alwasys setting it to 0 if eclipse inserts some tabbed code that
+"     the indent detection plugin uses for its calculations.
+"     \-  pos: A line/column pair indicating the new cursor position post
+"     edit. When this pair is supplied, this function will attempt to preserve
+"     the current window's viewport.
+" ----------------------------------------------------------------------------
+function! vimide#util#Reload(options)
+  let winview = winsaveview()
+  let save_expandtabe = &expandtab
+
+  edit!
+
+  if has_key(a:options, 'pos') && len(a:options.pos) == 2
+    let lnum = a:options.pos[0]
+    let cnum = a:options.pos[1]
+    if winheight(0) < line('$')
+      let winview.topline += lnum - winview.lnum
+      let winview.lnum = lnum
+      let winview.col = cnum - 1 
+      call winrestview(winview)
+    else
+      call cursor(lnum, cnum)
+    endif
+  endif
+
+  if has_key(a:options, 'retab') && a:options.retab
+    let &expandtab = save_expandtabe
+    retab
+  endif
+endfunction
 " vim:ft=vim

@@ -267,6 +267,16 @@ function! vimide#project#impl#IsProjectExists(project)
 endfunction
 
 " ----------------------------------------------------------------------------
+" Determines the current buffer file if located in avaiable project.
+"
+" IsCurrentFileInProject:
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#IsCurrentFileInProject()
+  let project = vimide#project#impl#GetProject(expand('%:p'))
+  return project == '' ? 0 : 1
+endfunction
+
+" ----------------------------------------------------------------------------
 " Retrieves and print out the list of projects.
 "
 " ProjectList:

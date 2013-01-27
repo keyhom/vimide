@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012 keyhom.c@gmail.com.
+ * Copyright (c) 2013 keyhom.c@gmail.com.
  *
  * This software is provided 'as-is', without any express or implied warranty.
  * In no event will the authors be held liable for any damages arising from
@@ -20,28 +20,22 @@
  *     3. This notice may not be removed or altered from any source
  *     distribution.
  */
-
 package org.vimide.eclipse.jdt;
 
-import org.osgi.framework.BundleContext;
-import org.vimide.core.server.VimideHttpServer;
-import org.vimide.eclipse.core.VimidePlugin;
-import org.vimide.eclipse.jdt.servlet.JVMListServlet;
-import org.vimide.eclipse.jdt.servlet.source.JavaFormatServlet;
+import org.eclipse.osgi.util.NLS;
+import org.vimide.eclipse.core.CoreMessages;
 
 /**
- * Vimide JDT plugin for eclipse.
- * 
+ * JDT plugin message bindings.
+ *
  * @author keyhom (keyhom.c@gmail.com)
  */
-public class VimideJdtPlugin extends VimidePlugin {
-
-    @Override
-    protected void activate(BundleContext context) {
-        super.activate(context);
-        
-        VimideHttpServer.getInstance().registerServlet(JVMListServlet.class);
-        VimideHttpServer.getInstance().registerServlet(JavaFormatServlet.class);
-    }
+public class JdtMessages extends CoreMessages {
     
+    public static final String BUNDLE_NAME = "org.vimide.eclipse.jdt.messages";
+    
+    static {
+        NLS.initializeMessages(BUNDLE_NAME, JdtMessages.class);
+    }
+
 }
