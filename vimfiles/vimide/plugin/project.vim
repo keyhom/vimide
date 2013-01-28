@@ -39,6 +39,11 @@ command! -nargs=?
       \ -complete=customlist,vimide#project#impl#CommandCompleteSingleProject
       \ Pinfo :call vimide#project#impl#ProjectInfo('<args>')
 
+" Problems:
+command! -nargs=* -bang
+      \ -complete=customlist,vimide#project#problem#CommandCompleteProblems
+      \ Problems :call vimide#project#problem#Problems('<bang>', <f-args>)
+
 " ProjectCreate:
 command! -nargs=+ 
       \ -complete=customlist,vimide#project#impl#CommandCompleteProjectCreate

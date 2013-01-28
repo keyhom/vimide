@@ -31,6 +31,7 @@ import org.vimide.eclipse.core.servlet.PingServlet;
 import org.vimide.eclipse.core.servlet.ShellServlet;
 import org.vimide.eclipse.core.servlet.TestServlet;
 import org.vimide.eclipse.core.servlet.WorkspaceDirServlet;
+import org.vimide.eclipse.core.servlet.problem.ProblemListServlet;
 import org.vimide.eclipse.core.servlet.project.ProjectBuildServlet;
 import org.vimide.eclipse.core.servlet.project.ProjectByResourceServlet;
 import org.vimide.eclipse.core.servlet.project.ProjectCloseServlet;
@@ -110,6 +111,7 @@ public class VimideCorePlugin extends VimidePlugin {
         VimideHttpServer.getInstance().registerServlet(ProjectDeleteServlet.class);
         VimideHttpServer.getInstance().registerServlet(ProjectNamesServlet.class);
         VimideHttpServer.getInstance().registerServlet(TestServlet.class);
+        VimideHttpServer.getInstance().registerServlet(ProblemListServlet.class);
     }
 
 }
