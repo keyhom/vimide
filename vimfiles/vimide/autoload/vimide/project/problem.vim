@@ -96,6 +96,11 @@ function! vimide#project#problem#Problems(bang, ...)
     let errors = vimide#util#AssembleLocationEntries(result)
   endif
 
+  call vimide#util#SetQuickfixList(errors, 'r')
+
+  " generate a 'signature' to distinguish the problems list from other qf
+  " lists.
+  " let s:vimide_problems_sig = s:QuickfixSignature()
 endfunction
 
 " ----------------------------------------------------------------------------

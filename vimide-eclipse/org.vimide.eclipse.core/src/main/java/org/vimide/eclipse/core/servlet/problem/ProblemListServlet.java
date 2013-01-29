@@ -22,6 +22,7 @@
  */
 package org.vimide.eclipse.core.servlet.problem;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
+import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 
 import com.google.common.collect.Lists;
@@ -96,18 +98,26 @@ public class ProblemListServlet extends GenericVimideHttpServlet {
                                         .get("charStart")).intValue() : 1;
                                 int line = attributes.containsKey("lineNumber") ? ((Integer) attributes
                                         .get("lineNumber")).intValue() : 1;
-                                int[] pos = {1, 1};
-                                
-                                String message = (String)attributes.get("message");
-                                String path = resource.getLocation().toOSString().replace("\\", "/");
-                                
-                                m.put("resource", marker.getResource()
-                                        .getName());
-                                m.put("path", marker.getResource()
-                                        .getFullPath().toString());
-                                m.put("location", marker.getResource()
-                                        .getLocation().toOSString());
-                                m.putAll(attributes);
+
+                                int[] pos = { 1, 1 };
+
+                                String message = (String) attributes
+                                        .get("message");
+                                String path = resource.getLocation()
+                                        .toOSString().replace("\\", "/");
+
+                                File file = new File(path);
+                                if (file.isFile() && file.exists()
+                                        && offset > 0) {
+                                    pos = new FileObject(file)
+                                            .getLineColumn(offset);
+                                }
+
+                                m.put("message", message);
+                                m.put("filename", path);
+                                m.put("line", Math.max(pos[0], line));
+                                m.put("col", pos[1]);
+                                m.put("severity", severityValue);
                                 results.add(m);
                             }
                         }

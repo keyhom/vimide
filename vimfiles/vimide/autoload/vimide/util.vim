@@ -263,7 +263,101 @@ function! vimide#util#AssembleLocationEntries(entries, ...)
   for entry in a:entries
     let dict = s:ParseLocationEntry(entry)
 
+    " partition by severity
+    if type(entries) == g:DICT_TYPE
+      " empty key not allowed.
+      let type = dict.type == '' ? ' ' : tolower(dict.type)
+      if !has_key(entries, type)
+        let entries[type] = []
+      endif
+      call add(entries[type], dict)
+    else " default sort
+      call add(entries, dict)
+    endif
   endfor
+
+  " re-assemble severity partitioned results
+  if type(entries) == g:DICT_TYPE
+    let results = []
+    if has_key(entries, 'e')
+      let results += remove(entries, 'e')
+    endif
+    if has_key(entries, 'w')
+      let results += remove(entries, 'w')
+    endif
+    if has_key(entries, 'i')
+      let results += remove(entries, 'i')
+    endif
+    " should only be key '' (no type), but we don't want to accidentally
+    " filter out other possible type.
+    let keys = keys(entries)
+    call reverse(sort(keys))
+    for key in keys
+      let results += entries[key]
+    endfor
+    return results
+  endif
+
+  return entries 
+endfunction
+
+function! s:ParseLocationEntry(entry) " {{{
+  let entry = a:entry
+  if type(entry) == g:DICT_TYPE
+    let file = entry.filename
+    let line = entry.line
+    let col = entry.col
+    let message = entry.message
+    let type = entry.severity == 2 ? 'e' : 'w'
+  endif
+
+  let file = vimide#util#LegalPath(file, 1)
+
+  let dict = {
+        \ 'filename': file,
+        \ 'lnum': line,
+        \ 'col': col,
+        \ 'text': message,
+        \ 'type': type
+        \ }
+  return dict
+endfunction "}}}
+
+" ----------------------------------------------------------------------------
+" Sets the contents of the quickfix list.
+"
+" SetQuickfixList:
+"   list      - the list of errors
+"   [action]  - the specific action to set.
+" ----------------------------------------------------------------------------
+function! vimide#util#SetQuickfixList(list, ...)
+  let qflist = a:list
+  if exists('b:VideQuickfixFilter')
+    let newlist = []
+    for item in qflist
+      let addit = 1
+
+      for filter in b:VideQuickfixFilter
+        if item.text =~ filter
+          let addit = 0
+          break
+        endif
+      endfor
+
+      if addit
+        call add(newlist, item)
+      endif
+    endfor
+
+    let qflist = newlist
+  endif
+
+  if a:0 == 0
+    call setqflist(qflist)
+  else
+    call setqflist(qflist, a:1)
+  endif
+
 endfunction
 
 " vim:ft=vim
