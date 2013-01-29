@@ -42,7 +42,7 @@ command! -nargs=?
 " Problems:
 command! -nargs=* -bang
       \ -complete=customlist,vimide#project#problem#CommandCompleteProblems
-      \ Problems :call vimide#project#problem#Problems('<bang>', <f-args>)
+      \ Problems :call vimide#project#problem#Problems('<bang>', <f-args>)|exec g:VideProblemsQuickFixOpen
 
 " ProjectCreate:
 command! -nargs=+ 

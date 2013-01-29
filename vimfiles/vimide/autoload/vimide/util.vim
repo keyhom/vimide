@@ -238,4 +238,32 @@ function! vimide#util#Reload(options)
     retab
   endif
 endfunction
+
+" ----------------------------------------------------------------------------
+" Parses the supplied list of location entry lines (%f|%l col %c|%m) into a
+" vim compatable list of dictionaries that can be passed to setqflist() or
+" setloclist().
+" In addition to the above line format, this function also supports %f|%l col
+" %c|%m|%s, where %s is the type of the entry. The value will be placed in the
+" dictionary under the 'type' key.
+" The optional 'sort' parameter currently only supports 'severity' as an
+" argument.
+"
+" AssembleLocationEntries:
+"   entries         - the specified entries to parse.
+"   sort(optional)  - the optional parameter supports for 'severity'.
+" ----------------------------------------------------------------------------
+function! vimide#util#AssembleLocationEntries(entries, ...)
+  if len(a:000) > 0 && a:1 == 'severity'
+    let entries = {}
+  else
+    let entries = []
+  endif
+
+  for entry in a:entries
+    let dict = s:ParseLocationEntry(entry)
+
+  endfor
+endfunction
+
 " vim:ft=vim

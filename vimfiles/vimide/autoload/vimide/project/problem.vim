@@ -24,6 +24,16 @@
 
 " ----------------------------------------------------------------------------
 "
+" Global Variables:
+"
+" ----------------------------------------------------------------------------
+
+if !exists('g:VideProblemsQuickFixOpen')
+  let g:VideProblemsQuickFixOpen = 'botright copen'
+endif
+
+" ----------------------------------------------------------------------------
+"
 "  Script Variables:
 "
 " ----------------------------------------------------------------------------
@@ -81,8 +91,9 @@ function! vimide#project#problem#Problems(bang, ...)
   let command .= '?' . queryString
 
   let result = vimide#Execute(command)
-  if type(result) == g:LIST_TYPE
-    echo result
+  let errors = []
+  if type(result) == g:LIST_TYPE && len(result) > 0
+    let errors = vimide#util#AssembleLocationEntries(result)
   endif
 
 endfunction

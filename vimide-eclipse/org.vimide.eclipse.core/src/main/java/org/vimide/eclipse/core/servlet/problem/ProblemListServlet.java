@@ -81,18 +81,32 @@ public class ProblemListServlet extends GenericVimideHttpServlet {
                             Object severityValue = marker
                                     .getAttribute(IMarker.SEVERITY);
                             if (severityValue instanceof Integer
-                                    && Integer.parseInt(severityValue
-                                            .toString()) <= severity) {
+                                    && ((Integer) severityValue).intValue() <= severity) {
+                                Map<String, Object> attributes = marker
+                                        .getAttributes();
                                 Map<String, Object> m = Maps.newHashMap();
-//                                m.put("id", String.valueOf(marker.getId()));
-//                                m.put("type", marker.getType());
+                                IResource resource = marker.getResource();
+                                if (null == resource
+                                        || null == resource.getRawLocation()) {
+                                    continue;
+                                }
+
+                                int offset = attributes
+                                        .containsKey("charStart") ? ((Integer) attributes
+                                        .get("charStart")).intValue() : 1;
+                                int line = attributes.containsKey("lineNumber") ? ((Integer) attributes
+                                        .get("lineNumber")).intValue() : 1;
+                                int[] pos = {1, 1};
+                                
+                                String message = (String)attributes.get("message");
+                                String path = resource.getLocation().toOSString().replace("\\", "/");
+                                
                                 m.put("resource", marker.getResource()
                                         .getName());
                                 m.put("path", marker.getResource()
                                         .getFullPath().toString());
-                                m.put("location", marker.getResource().getLocation().toOSString());
-                                Map<String, Object> attributes = marker
-                                        .getAttributes();
+                                m.put("location", marker.getResource()
+                                        .getLocation().toOSString());
                                 m.putAll(attributes);
                                 results.add(m);
                             }
