@@ -51,9 +51,10 @@ let s:command_problems = "/problems"
 "
 " Problems:
 "   bang      - the specific charactor by process all project.
+"   open      - the specific value to open the quickfix window.
 "   args[...] - the arguments withing projects and options.
 " ----------------------------------------------------------------------------
-function! vimide#project#problem#Problems(bang, ...)
+function! vimide#project#problem#Problems(bang, open, ...)
   " determines the reacting projects.
   let projects = []
   if a:bang == '!'
@@ -101,6 +102,11 @@ function! vimide#project#problem#Problems(bang, ...)
   " generate a 'signature' to distinguish the problems list from other qf
   " lists.
   " let s:vimide_problems_sig = s:QuickfixSignature()
+
+  if a:open
+    exec g:VideProblemsQuickFixOpen
+  endif
+
 endfunction
 
 " ----------------------------------------------------------------------------
