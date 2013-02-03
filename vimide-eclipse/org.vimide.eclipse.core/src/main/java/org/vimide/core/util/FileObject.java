@@ -27,11 +27,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang.StringUtils;
 
 import com.google.common.collect.Lists;
@@ -104,23 +103,45 @@ public class FileObject {
 
     /**
      * Parses the offsets list.
+     * 
+     * @throws IOException
      */
-    protected void compileOffsets() {
-        LineIterator iterator = IOUtils.lineIterator(new InputStreamReader(
-                stream));
+    protected void compileOffsets() throws IOException {
         List<Integer> lines = Lists.newArrayList(0);
         List<String> byteLines = Lists.newArrayList(StringUtils.EMPTY);
+        String content = getContents();
+        String lineDelimiter = "\n";
 
         int offset = 0;
         String line = null;
-        for (; iterator.hasNext();) {
-            line = iterator.nextLine();
-            offset += line.length();
-            lines.add(new Integer(offset));
-            if (line.length() != line.getBytes().length) {
-                byteLines.add(line);
+        String cacheLine = null;
+        StringTokenizer tokenizer = new StringTokenizer(content, lineDelimiter,
+                true);
+        boolean newLine = false;
+        while (tokenizer.hasMoreTokens()) {
+            line = tokenizer.nextToken();
+
+            if (null != cacheLine && !cacheLine.equals(lineDelimiter)
+                    && line.equals(lineDelimiter)) {
+                // the new line end with previous line.
+                newLine = true;
+            } else if (null != cacheLine && cacheLine.equals(lineDelimiter)
+                    && line.equals(lineDelimiter)) {
+                newLine = true;
             } else {
-                byteLines.add(null);
+                newLine = false;
+            }
+
+            cacheLine = line;
+            offset += line.length();
+
+            if (newLine) {
+                lines.add(new Integer(offset));
+                if (line.length() != line.getBytes().length) {
+                    byteLines.add(line);
+                } else {
+                    byteLines.add(null);
+                }
             }
         }
 
@@ -137,7 +158,10 @@ public class FileObject {
     public int[] getLineColumn(int offset) {
         // performs the lazy compile.
         if (null == offsets) {
-            compileOffsets();
+            try {
+                compileOffsets();
+            } catch (IOException e) {
+            }
         }
 
         // return the minimize value if the offset was illegal.
@@ -146,7 +170,7 @@ public class FileObject {
 
         // r/b filtering the offset index in the compile offsets.
         int bot = -1;
-        int top = offsets.length - 1;
+        int top = offsets.length;
 
         while (top - bot > 1) {
             int mid = (top + bot) / 2;
@@ -157,14 +181,9 @@ public class FileObject {
             }
         }
 
-        // corrects the index.
-        if (offsets[top].intValue() > offset) {
-            top--;
-        }
-
         // resolves the line and column.
-        int line = top + 1;
-        int column = 1 + offset - offsets[top].intValue();
+        int line = top;
+        int column = 1 + offset - offsets[top - 1].intValue();
         String value = multiByteLines.length > line ? multiByteLines[line]
                 : null;
         if (value != null) {
@@ -186,7 +205,10 @@ public class FileObject {
             int column = linecol[1];
 
             if (null == offsets) {
-                compileOffsets();
+                try {
+                    compileOffsets();
+                } catch (IOException e) {
+                }
             }
 
             if (line < 0 || line > offsets.length) {
@@ -202,6 +224,32 @@ public class FileObject {
             return offset;
         }
         return -1;
+    }
+
+    /**
+     * Finds the first line separator used by the given text.
+     * 
+     * @return </code>"\n"</code> or </code>"\r"</code> or </code>"\r\n"</code>,
+     *         or <code>null</code> if none found
+     */
+    public static String findLineSeparator(char[] text) {
+        // find the first line separator
+        int length = text.length;
+        if (length > 0) {
+            char nextChar = text[0];
+            for (int i = 0; i < length; i++) {
+                char currentChar = nextChar;
+                nextChar = i < length - 1 ? text[i + 1] : ' ';
+                switch (currentChar) {
+                    case '\n':
+                        return "\n"; //$NON-NLS-1$
+                    case '\r':
+                        return nextChar == '\n' ? "\r\n" : "\r"; //$NON-NLS-1$ //$NON-NLS-2$
+                }
+            }
+        }
+        // not found
+        return null;
     }
 
     @Override

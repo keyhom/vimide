@@ -22,7 +22,6 @@
  */
 package org.vimide.eclipse.core.servlet.problem;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -38,11 +37,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
-import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
+import org.vimide.eclipse.core.util.EclipseResourceUtil;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 /**
  * Requests to list all the specific level problems.
@@ -73,55 +71,16 @@ public class ProblemListServlet extends GenericVimideHttpServlet {
 
         List<Map<String, Object>> results = Lists.newArrayList();
         int depth = IResource.DEPTH_INFINITE;
+
         for (IProject project : projects) {
             if (project.exists()) {
                 try {
                     IMarker[] findMarkers = project.findMarkers(
                             IMarker.PROBLEM, true, depth);
-                    if (null != findMarkers && findMarkers.length > 0) {
-                        for (IMarker marker : findMarkers) {
-                            Object severityValue = marker
-                                    .getAttribute(IMarker.SEVERITY);
-                            if (severityValue instanceof Integer
-                                    && ((Integer) severityValue).intValue() <= severity) {
-                                Map<String, Object> attributes = marker
-                                        .getAttributes();
-                                Map<String, Object> m = Maps.newHashMap();
-                                IResource resource = marker.getResource();
-                                if (null == resource
-                                        || null == resource.getRawLocation()) {
-                                    continue;
-                                }
-
-                                int offset = attributes
-                                        .containsKey("charStart") ? ((Integer) attributes
-                                        .get("charStart")).intValue() : 1;
-                                int line = attributes.containsKey("lineNumber") ? ((Integer) attributes
-                                        .get("lineNumber")).intValue() : 1;
-
-                                int[] pos = { 1, 1 };
-
-                                String message = (String) attributes
-                                        .get("message");
-                                String path = resource.getLocation()
-                                        .toOSString().replace("\\", "/");
-
-                                File file = new File(path);
-                                if (file.isFile() && file.exists()
-                                        && offset > 0) {
-                                    pos = new FileObject(file)
-                                            .getLineColumn(offset);
-                                }
-
-                                m.put("message", message);
-                                m.put("filename", path);
-                                m.put("line", Math.max(pos[0], line));
-                                m.put("col", pos[1]);
-                                m.put("severity", severityValue);
-                                results.add(m);
-                            }
-                        }
-                    }
+                    List<Map<String, Object>> problems = EclipseResourceUtil
+                            .getProblems(findMarkers, severity);
+                    if (null != problems && !problems.isEmpty())
+                        results.addAll(problems);
                 } catch (CoreException e) {
                     LOGGER.error("{}", e.getMessage(), e);
                 }

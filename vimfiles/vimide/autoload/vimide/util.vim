@@ -332,12 +332,12 @@ endfunction "}}}
 " ----------------------------------------------------------------------------
 function! vimide#util#SetQuickfixList(list, ...)
   let qflist = a:list
-  if exists('b:VideQuickfixFilter')
+  if exists('b:VIdeQuickfixFilter')
     let newlist = []
     for item in qflist
       let addit = 1
 
-      for filter in b:VideQuickfixFilter
+      for filter in b:VIdeQuickfixFilter
         if item.text =~ filter
           let addit = 0
           break
@@ -358,6 +358,55 @@ function! vimide#util#SetQuickfixList(list, ...)
     call setqflist(qflist, a:1)
   endif
 
+  let projectName = vimide#project#impl#GetProject(expand('%:p'))
+  if projectName != ''
+    for item in getqflist()
+      call setbufvar(item.bufnr, 'vimide_project', projectName)
+    endfor
+  endif
+
+  if len(qflist) > 0
+    " delayed to call the 'ShowCurrentError()'
+  endif
+
+  " Update the problem signs.
+  call vimide#display#signs#Update()
+endfunction
+
+" ----------------------------------------------------------------------------
+" Clears the current quickfix list. Optionally 'namespace' arguments can be
+" supplied which will only clear items with text prefixed with '[namespace]'.
+" Also the specific namespace 'global' may be supplied which will only remove
+" items with no namespace prefix.
+"
+" ClearQuickfixList:
+"   namespace - the namespace.
+" ----------------------------------------------------------------------------
+function! vimide#util#ClearQuickfixList(...)
+  if a:0 > 0
+    let qflist = getqflist()
+    if len(qflist) > 0
+      let pattern = ''
+      for ns in a:000
+        if pattern != ''
+          let pattern .= '\|'
+        endif
+        if ns == 'global'
+          let pattern .= '\(\[\w\+\]\)\@!'
+        else
+          let pattern .= '\[' . ns . '\]'
+        endif
+      endfor
+
+      let pattern = '^\(' . pattern . '\)'
+
+      call filter(qflist, 'v:val.text !~ pattern')
+      call setqflist(qflist, 'r')
+    endif
+  else
+    call setqflist([], 'r')
+  endif
+  call vimide#display#signs#Update()
 endfunction
 
 " vim:ft=vim
