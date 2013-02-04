@@ -91,6 +91,18 @@ if !exists('g:VIdeTempDir')
   let g:VIdeTempDir = substitute(g:VIdeTempDir, '\', '/', 'g')
 endif
 
+if !exists('g:VIdeShowCurrentError')
+  let g:VIdeShowCurrentError = 1
+endif
+
+if !exists('g:VIdeShowCurrentErrorBalloon')
+  let g:VIdeShowCurrentErrorBalloon = 1
+endif
+
+if !exists('g:VIdeValidateSortResults')
+  let g:VIdeValidateSortResults = 'occurrence'
+endif
+
 " ----------------------------------------------------------------------------
 "
 " Command Declartions:

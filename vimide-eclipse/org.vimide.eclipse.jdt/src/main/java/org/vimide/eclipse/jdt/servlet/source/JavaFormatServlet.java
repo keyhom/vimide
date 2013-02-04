@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
+import org.vimide.eclipse.jdt.util.EclipseJdtUtil;
 
 /**
  * Requests to format the specific java source.
@@ -160,7 +161,7 @@ public class JavaFormatServlet extends GenericVimideHttpServlet {
                     CodeFormatter.K_COMPILATION_UNIT
                             | CodeFormatter.F_INCLUDE_COMMENTS, source,
                     startPosition, contentLength, 0,
-                    System.getProperty("line.separator"));
+                    EclipseJdtUtil.getLineDelimiter(src));
 
             IDocument document = new Document(source);
 

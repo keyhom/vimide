@@ -28,6 +28,7 @@ import org.vimide.core.server.VimideHttpServer;
 import org.vimide.eclipse.core.VimidePlugin;
 import org.vimide.eclipse.jdt.servlet.JVMListServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaFormatServlet;
+import org.vimide.eclipse.jdt.servlet.source.JavaUpdateSrcServlet;
 
 /**
  * Vimide JDT plugin for eclipse.
@@ -39,9 +40,11 @@ public class VimideJdtPlugin extends VimidePlugin {
     @Override
     protected void activate(BundleContext context) {
         super.activate(context);
-        
+
         VimideHttpServer.getInstance().registerServlet(JVMListServlet.class);
         VimideHttpServer.getInstance().registerServlet(JavaFormatServlet.class);
+        VimideHttpServer.getInstance().registerServlet(
+                JavaUpdateSrcServlet.class);
     }
-    
+
 }

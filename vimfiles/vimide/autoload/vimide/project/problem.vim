@@ -99,7 +99,7 @@ function! vimide#project#problem#Problems(bang, open, ...)
   let result = vimide#Execute(command)
   let errors = []
   if type(result) == g:LIST_TYPE && len(result) > 0
-    let errors = vimide#util#AssembleLocationEntries(result)
+    let errors = vimide#util#AssembleLocationEntries(result, g:VIdeValidateSortResults)
   endif
 
   if len(errors) > 0
