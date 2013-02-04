@@ -240,6 +240,9 @@ function! vimide#display#signs#Update()
 
   let placeholder = vimide#display#signs#SetPlaceholder()
 
+  let qflist = filter(g:VIdeShowQuickfixSigns ? getqflist() : [], 'bufnr("%") == v:val.bufnr')
+  let loclist = filter(g:VIdeShowLoclistSigns ? getloclist(0) : [], 'bufnr("%") == v:val.bufnr')
+
   " remove all existing signs
   let existing = vimide#display#signs#GetExisting()
   for exists in existing
@@ -247,9 +250,6 @@ function! vimide#display#signs#Update()
       call vimide#display#signs#Unplace(exists.id)
     endif
   endfor
-
-  let qflist = filter(g:VIdeShowQuickfixSigns ? getqflist() : [], 'bufnr("%") == v:val.bufnr')
-  let loclist = filter(g:VIdeShowLoclistSigns ? getloclist(0) : [], 'bufnr("%") == v:val.bufnr')
 
   for [list, marker, prefix] in [[qflist, g:VIdeQuickfixSignText, 'qf_'],
         \ [loclist, g:VIdeLoclistSignText, '']]
@@ -288,7 +288,7 @@ endfunction
 "   signs.
 " ----------------------------------------------------------------------------
 function! vimide#display#signs#SetPlaceholder(...)
-  if !has('sign') || !g:VIdeSignLevel
+  if !has('signs') || !g:VIdeSignLevel
     return
   endif
 
@@ -299,7 +299,7 @@ function! vimide#display#signs#SetPlaceholder(...)
     endif
   endif
 
-  call vimide#display#signs#Define('placeholder', '_ ', g:VIdeInfoHighlight)
+  call vimide#display#signs#Define('placeholder', '><', g:VIdeInfoHighlight)
   let existing = vimide#display#signs#GetExisting('placeholder')
   if len(existing) == 0 && vimide#display#signs#HasExisting()
     call vimide#display#signs#Place('placeholder', 1)
@@ -314,7 +314,7 @@ endfunction
 " RemovePlaceholder:
 " ----------------------------------------------------------------------------
 function! vimide#display#signs#RemovePlaceholder()
-  if !has('sign') || !g:VIdeSignLevel
+  if !has('signs') || !g:VIdeSignLevel
     return
   endif
 
