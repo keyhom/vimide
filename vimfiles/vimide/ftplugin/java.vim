@@ -23,11 +23,31 @@
 "
 
 " ----------------------------------------------------------------------------
+"
 " Misc Settings:
+"
 " ----------------------------------------------------------------------------
 setlocal tw=80
 setlocal sw=4
 setlocal ts=4
+
+if !exists('g:VIdeJavaValidate')
+  let g:VIdeJavaValidate = 1
+endif
+
+" ----------------------------------------------------------------------------
+"
+" Autocmds:
+"
+" ----------------------------------------------------------------------------
+
+if &ft == 'java'
+  augroup vimide_java
+    autocmd! BufWritePost <buffer>
+    autocmd BufWritePost <buffer>
+          \ call vimide#lang#UpdateSrcFile('java', g:VIdeJavaValidate)
+  augroup end
+endif
 
 " ----------------------------------------------------------------------------
 "

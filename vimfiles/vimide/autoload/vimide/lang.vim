@@ -56,16 +56,22 @@ function! vimide#lang#UpdateSrcFile(lang, validate)
       let command .= '&validate=1'
       " if problem list wasn't empty and global prefered to update src file on
       " save.
-      " let command .= '&build=1'
+      if vimide#project#problem#IsNotEmpty() && g:VIdeProjectProblemsUpdateOnBuild
+        let command .= '&build=1'
+      endif
     endif
-
-    echo command
-    return
 
     let result = vimide#Execute(command)
+
     if type(result) == g:LIST_TYPE && len(result) > 0
       " Update the quickfix list here.
+      let errors = vimide#util#AssembleLocationEntries(result)
+      call vimide#util#SetQuickfixList(errors)
+    else
+      call vimide#util#ClearQuickfixList('global')
     endif
+
+    call vimide#project#problem#ProblemsUpdate('save')
   elseif a:validate && expand('<amatch>') == ''
     call vimide#project#impl#IsCurrentFileInProject()
   endif

@@ -24,6 +24,24 @@
 
 " ----------------------------------------------------------------------------
 "
+" Global Variables:
+"
+" ----------------------------------------------------------------------------
+
+if !exists('g:VIdeProjectRefreshFiles')
+  let g:VIdeProjectRefreshFiles = 1
+endif
+
+if !exists('g:VIdeProjectProblemsUpdateOnSave')
+  let g:VIdeProjectProblemsUpdateOnSave = 1
+endif
+
+if !exists('g:VIdeProjectProblemsUpdateOnBuild')
+  let g:VIdeProjectProblemsUpdateOnBuild = 1
+endif
+
+" ----------------------------------------------------------------------------
+"
 " Command Declartions: 
 "
 " ----------------------------------------------------------------------------
