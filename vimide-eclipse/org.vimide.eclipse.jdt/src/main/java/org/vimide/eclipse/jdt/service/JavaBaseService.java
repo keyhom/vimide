@@ -41,24 +41,6 @@ import org.eclipse.jdt.core.JavaCore;
 public class JavaBaseService {
 
     /**
-     * The lazy singleton holder.
-     * 
-     * @author keyhom (keyhom.c@gmail.com)
-     */
-    static class SingletonHolder {
-        static final JavaBaseService instance = new JavaBaseService();
-    }
-
-    /**
-     * Gets the singleton instance.
-     * 
-     * @return singleton.
-     */
-    public static JavaBaseService getInstance() {
-        return SingletonHolder.instance;
-    }
-
-    /**
      * Gets the compilation unit by the supplied project and file.
      * 
      * @param project the specific project.

@@ -49,3 +49,5 @@ os
 ids
 int
 ide
+dom
+src

@@ -39,6 +39,8 @@ import org.vimide.eclipse.jdt.servlet.source.OrganizeImportsServlet;
  */
 public class VimideJdtPlugin extends VimidePlugin {
 
+    public static final String PLUGIN_ID = "org.vimide.eclipse.jdt";
+
     @Override
     protected void activate(BundleContext context) {
         super.activate(context);
@@ -49,7 +51,8 @@ public class VimideJdtPlugin extends VimidePlugin {
                 JavaUpdateSrcServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 OrganizeImportsServlet.class);
-        VimideHttpServer.getInstance().registerServlet(JavaDocCommentServlet.class);
+        VimideHttpServer.getInstance().registerServlet(
+                JavaDocCommentServlet.class);
     }
 
 }

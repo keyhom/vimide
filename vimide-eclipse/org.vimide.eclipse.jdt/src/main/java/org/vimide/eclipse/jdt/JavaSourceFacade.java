@@ -23,8 +23,17 @@
 package org.vimide.eclipse.jdt;
 
 import java.io.File;
+import java.util.Map;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jface.text.IDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.vimide.eclipse.jdt.service.JavaSourceService;
 
 /**
  * The facade for the java source functions.
@@ -34,15 +43,55 @@ import org.eclipse.jdt.core.IJavaProject;
 public final class JavaSourceFacade {
 
     /**
+     * Logger
+     */
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(JavaSourceFacade.class.getName());
+
+    /**
      * Formats the java source elements.
      * 
      * @param project the java project.
      * @param file the source file.
      * @param bOffset the begin source offset.
      * @param eOffset the end source offset.
+     * @throws CoreException
      */
-    public static void format(IJavaProject project, File file, int bOffset,
-            int eOffset) {
+    public static boolean format(IJavaProject project, File file, int bOffset,
+            int eOffset) throws CoreException {
+        if (null == project || !project.exists()) {
+            throw new CoreException(new Status(IStatus.ERROR,
+                    VimideJdtPlugin.PLUGIN_ID, "Illegal project."));
+        }
+
+        if (null == file || !file.exists()) {
+            throw new CoreException(new Status(IStatus.ERROR,
+                    VimideJdtPlugin.PLUGIN_ID, "Illegal file."));
+        }
+
+        if (0 > bOffset || 0 == eOffset) {
+            throw new CoreException(new Status(IStatus.ERROR,
+                    VimideJdtPlugin.PLUGIN_ID, "Illegal offset."));
+        }
+
+        final JavaSourceService service = JavaSourceService.getInstance();
+        final Map<String, String> options = service.getOptions(project);
+
+        ICompilationUnit src = service.getCompilationUnit(project.getProject(),
+                file);
+
+        try {
+            IDocument document = service.format(src, options, bOffset, eOffset);
+
+            if (null != document) {
+                service.save(src, document);
+            }
+            return true;
+        } catch (final CoreException e) {
+            LOGGER.error("", e);
+        }
+
+        return false;
     }
 
 }
