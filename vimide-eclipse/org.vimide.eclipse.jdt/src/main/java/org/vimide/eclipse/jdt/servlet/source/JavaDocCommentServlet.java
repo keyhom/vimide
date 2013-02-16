@@ -22,7 +22,6 @@
  */
 package org.vimide.eclipse.jdt.servlet.source;
 
-import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
@@ -34,12 +33,12 @@ import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 
 /**
- * Requests to organize imports for the specific source.
+ * Requests to 
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
-@WebServlet(urlPatterns = "/organizeImports")
-public class OrganizeImportsServlet extends GenericVimideHttpServlet {
+@WebServlet(urlPatterns = "javaDocComment")
+public class JavaDocCommentServlet extends GenericVimideHttpServlet {
 
     private static final long serialVersionUID = 1L;
 
@@ -47,23 +46,7 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
     protected void doGet(VimideHttpServletRequest req,
             VimideHttpServletResponse resp) throws ServletException,
             IOException {
-        // Validating the supplied request parameters.
-        final IProject project = getProject(req);
-
-        if (null == project || !project.exists()) {
-            resp.sendError(403);
-            return;
-        }
-
-        final File file = getFile(req);
-
-        if (null == file || !file.exists() || file.isDirectory()) {
-            resp.sendError(403);
-            return;
-        }
-
-        // Be sure the project and the file is correct.
-
+        
     }
 
 }
