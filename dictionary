@@ -51,3 +51,7 @@ int
 ide
 dom
 src
+enum
+javadoc
+params
+param

@@ -23,8 +23,20 @@
 package org.vimide.eclipse.jdt.util;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.Initializer;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.NodeFinder;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jface.text.Document;
+import org.eclipse.text.edits.TextEdit;
 
 /**
  * Utility class for working with the eclipse java dom model.
@@ -61,6 +73,110 @@ public class ASTUtil {
      */
     public static CompilationUnit getCompilationUnit(ICompilationUnit src,
             boolean recordModifications) {
-        return null;
+        ASTParser parser = ASTParser.newParser(AST.JLS4);
+        parser.setSource(src);
+        CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+        if (recordModifications)
+            cu.recordModifications();
+        return cu;
+    }
+
+    /**
+     * Commits any changes made to the supplied CompilationUnit.
+     * 
+     * @param src the original source.
+     * @param node the compilation unit AST node.
+     * @throws Exception
+     */
+    public static void commitCompilationUnit(ICompilationUnit src,
+            CompilationUnit node) throws Exception {
+        Document document = new Document(src.getBuffer().getContents());
+        TextEdit edits = node.rewrite(document, src.getJavaProject()
+                .getOptions(true));
+        edits.apply(document);
+        src.getBuffer().setContents(document.get());
+        if (src.isWorkingCopy()) {
+            src.commitWorkingCopy(false, null);
+        }
+        src.save(null, false);
+    }
+
+    /**
+     * Finds the node at the specified offset.
+     * 
+     * @param root the root node to find.
+     * @param offset the node offset in the compilation unit.
+     * @return the node at the specified offset.
+     * @throws Exception
+     */
+    public static ASTNode findNode(CompilationUnit root, int offset)
+            throws Exception {
+        NodeFinder finder = new NodeFinder(root, offset, 1);
+        return finder.getCoveredNode();
+    }
+
+    /**
+     * Finds the node at the specified offset that matches up with the specified
+     * IJavaElement.
+     * 
+     * @param root the root node to find.
+     * @param offset the node offset in the root.
+     * @param element the IJavaElement to match.
+     * @return the node at the specified offset.
+     * @throws Exception
+     */
+    public static ASTNode findNode(CompilationUnit root, int offset,
+            IJavaElement element) throws Exception {
+        ASTNode node = findNode(root, offset);
+        if (null == node)
+            return null;
+        if (element.getElementType() == IJavaElement.TYPE_PARAMETER) {
+            element = element.getParent();
+        }
+
+        switch (element.getElementType()) {
+            case IJavaElement.PACKAGE_DECLARATION:
+                node = resolveNode(node, PackageDeclaration.class);
+                break;
+            case IJavaElement.IMPORT_DECLARATION:
+                node = resolveNode(node, ImportDeclaration.class);
+                break;
+            case IJavaElement.TYPE:
+                node = resolveNode(node, AbstractTypeDeclaration.class);
+                break;
+            case IJavaElement.INITIALIZER:
+                node = resolveNode(node, Initializer.class);
+                break;
+            case IJavaElement.FIELD:
+                node = resolveNode(node, FieldDeclaration.class);
+                break;
+            case IJavaElement.METHOD:
+                node = resolveNode(node, MethodDeclaration.class);
+                break;
+            default:
+                System.out
+                        .println("findNode(CompilationUnit, int, IJavaElement) - unrecognized element type "
+                                + element.getElementType());
+                break;
+        }
+        return node;
+    }
+
+    /**
+     * Walk up the node tree until a node of the specified type is reached.
+     * 
+     * @param node the starting node.
+     * @param type the type to resolve.
+     * @return the resulting node.
+     */
+    private static ASTNode resolveNode(ASTNode node, Class<?> type)
+            throws Exception {
+        if (null == node)
+            return null;
+        if (type.isAssignableFrom(node.getClass())) {
+            return node;
+        }
+
+        return resolveNode(node.getParent(), type);
     }
 }

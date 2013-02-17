@@ -44,7 +44,7 @@ import org.vimide.eclipse.jdt.service.JavaSourceService;
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
-@WebServlet(urlPatterns = "javaDocComment")
+@WebServlet(urlPatterns = "/javaDocComment")
 public class JavaDocCommentServlet extends GenericVimideHttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -104,18 +104,17 @@ public class JavaDocCommentServlet extends GenericVimideHttpServlet {
         IJavaElement element = null;
         try {
             element = src.getElementAt(offset);
-        } catch (JavaModelException e) {
+            // filtering the import declarations.
+            if (null != element
+                    && element.getElementType() != IJavaElement.IMPORT_DECLARATION) {
+                // Generate the covering element comment.
+                service.generateElementComment(src, offset, element);
+            }
+            resp.writeAsJson(1);
+        } catch (Exception e) {
             LOGGER.error("", e);
+            resp.writeAsJson(0);
         }
-
-        // filtering the import declarations.
-        if (null != element
-                && element.getElementType() != IJavaElement.IMPORT_DECLARATION) {
-            // Generate the covering element comment.
-            service.generateElementComment(src, element);
-        }
-
-        resp.writeAsJson(1);
     }
 
 }

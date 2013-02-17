@@ -23,7 +23,9 @@
 package org.vimide.eclipse.jdt.service;
 
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
@@ -31,8 +33,19 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.ToolFactory;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Javadoc;
+import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.TagElement;
+import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
@@ -43,8 +56,10 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.eclipse.jdt.VimideJdtPlugin;
+import org.vimide.eclipse.jdt.util.ASTUtil;
 import org.vimide.eclipse.jdt.util.EclipseJdtUtil;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
 /**
@@ -59,6 +74,11 @@ public class JavaSourceService extends JavaBaseService {
      */
     private static final Logger LOGGER = LoggerFactory
             .getLogger(JavaSourceService.class.getName());
+
+    static final Pattern THROWS_PATTERN = Pattern
+            .compile("\\s*[a-zA-Z0-9._]*\\.(\\w*)($|\\s.*)");
+
+    static final String INHERIT_DOC = "{" + TagElement.TAG_INHERITDOC + "}";
 
     /**
      * Lazy singleton holder.
@@ -225,21 +245,391 @@ public class JavaSourceService extends JavaBaseService {
     }
 
     public void generateElementComment(ICompilationUnit src, int offset)
-            throws JavaModelException {
+            throws Exception {
         if (null != src) {
             int offsetLimit = src.getBuffer().getContents().getBytes().length;
             if (offset >= 0 && offset <= offsetLimit) {
                 IJavaElement element = src.getElementAt(offset);
 
                 if (null != element)
-                    generateElementComment(src, element);
+                    generateElementComment(src, offset, element);
             }
         }
     }
 
-    public void generateElementComment(ICompilationUnit src,
-            IJavaElement element) {
-        
+    public void generateElementComment(ICompilationUnit src, int offset,
+            IJavaElement element) throws Exception {
+        if (null != src && null != element) {
+            CompilationUnit cu = ASTUtil.getCompilationUnit(src, true);
+            ASTNode node = ASTUtil.findNode(cu, offset, element);
+            if (null != node) {
+                // performs the comment.
+                comment(src, node, element);
+            }
+            ASTUtil.commitCompilationUnit(src, cu);
+        }
+    }
+
+    protected void comment(ICompilationUnit src, ASTNode node,
+            IJavaElement element) throws Exception {
+        Javadoc javadoc = null;
+        boolean isNew = false;
+
+        if (node instanceof PackageDeclaration) {
+            if (null == javadoc) {
+                isNew = true;
+                javadoc = node.getAST().newJavadoc();
+                ((PackageDeclaration) node).setJavadoc(javadoc);
+            }
+        } else {
+            javadoc = ((BodyDeclaration) node).getJavadoc();
+            if (null == javadoc) {
+                isNew = true;
+                javadoc = node.getAST().newJavadoc();
+                ((BodyDeclaration) node).setJavadoc(javadoc);
+            }
+        }
+
+        switch (node.getNodeType()) {
+        // case ASTNode.PACKAGE_DECLARATION:
+        // comment the package declaration.
+        // break;
+            case ASTNode.ENUM_DECLARATION:
+            case ASTNode.TYPE_DECLARATION:
+                // comment the declaration of the enum or type.
+                commentType(src, javadoc, element, isNew);
+                break;
+            case ASTNode.METHOD_DECLARATION:
+                // comment the method declaration.
+                commentMethod(src, javadoc, element, isNew);
+                break;
+            default:
+                // comment the other.
+                commentOther(src, javadoc, element, isNew);
+                break;
+        }
+    }
+
+    /**
+     * Comments a type declaration.
+     * 
+     * @param src the source.
+     * @param javadoc the javadoc instance.
+     * @param element the element of java.
+     * @param isNew true if there was no previous javadoc for this element.
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    private void commentType(ICompilationUnit src, Javadoc javadoc,
+            IJavaElement element, boolean isNew) throws Exception {
+        if (element.getParent().getElementType() == IJavaElement.COMPILATION_UNIT) {
+            List<TagElement> tags = javadoc.tags();
+            if (isNew) {
+                addTag(javadoc, tags.size(), null, null);
+                addTag(javadoc, tags.size(), null, null);
+                addTag(javadoc, tags.size(), TagElement.TAG_AUTHOR, null);
+            } else {
+                // check if author tag exists.
+                int index = -1;
+                for (int i = 0; i < tags.size(); i++) {
+                    TagElement tag = tags.get(i);
+                    if (TagElement.TAG_AUTHOR.equals(tag.getTagName())) {
+                        String authorText = tag.fragments().isEmpty() ? null
+                                : ((TextElement) tag.fragments().get(0))
+                                        .getText();
+                        // don't replace if author tag isn't the same.
+                        if (!Strings.isNullOrEmpty(authorText)) {
+                            index = -1;
+                            break;
+                        }
+
+                        index = i + 1;
+                    } else if (null != tag.getTagName() && -1 == index) {
+                        index = i;
+                    } else if (i == tags.size() - 1 && -1 == index) {
+                        index = i + 1;
+                    }
+                }
+
+                // insert author tag if it doesn't exists.
+                String author = "";
+                if (index > -1) {
+                    TagElement authorTag = javadoc.getAST().newTagElement();
+                    TextElement authorText = javadoc.getAST().newTextElement();
+                    authorText.setText(author);
+                    authorTag.setTagName(TagElement.TAG_AUTHOR);
+
+                    authorTag.fragments().add(authorText);
+                    tags.add(index, authorTag);
+                }
+
+                // add the version?
+            }
+        } else {
+            commentOther(src, javadoc, element, isNew);
+        }
+    }
+
+    /**
+     * Comments a method declaration.
+     * 
+     * @param src the source.
+     * @param javadoc the javadoc instance.
+     * @param element the element of java.
+     * @param isNew true if there was no previous javadoc for this element.
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    private void commentMethod(ICompilationUnit src, Javadoc javadoc,
+            IJavaElement element, boolean isNew) throws Exception {
+        List<TagElement> tags = javadoc.tags();
+        IMethod method = (IMethod) element;
+
+        if (isNew) {
+            // see if method is overriding / implementing method from
+            // superclass.
+            IType parentType = null;
+        }
+    }
+
+    private void commentOther(ICompilationUnit src, Javadoc javadoc,
+            IJavaElement element, boolean isNew) throws Exception {
+        if (isNew) {
+            addTag(javadoc, 0, null, null);
+        }
+    }
+
+    /**
+     * Adds a tag to the supplied list of tags.
+     * 
+     * @param javadoc the javadoc instance.
+     * @param index the index to insert the new tag at.
+     * @param name the tag name.
+     * @param text the tag text.
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    protected void addTag(Javadoc javadoc, int index, String name, String text)
+            throws Exception {
+        TagElement tag = javadoc.getAST().newTagElement();
+        tag.setTagName(name);
+
+        if (null != text) {
+            TextElement textElement = javadoc.getAST().newTextElement();
+            textElement.setText(text);
+
+            List<ASTNode> fragments = tag.fragments();
+            fragments.add(textElement);
+        }
+
+        List<TagElement> tags = javadoc.tags();
+        tags.add(tag);
+    }
+
+    /**
+     * Add or update the param tags for the given method.
+     * 
+     * @param javadoc the javadoc instance.
+     * @param method the method.
+     * @param isNew true if we're adding to brand new javadoc.
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    protected void addUpdateParamTags(Javadoc javadoc, IMethod method,
+            boolean isNew) throws Exception {
+        List<TagElement> tags = javadoc.tags();
+        String[] params = method.getParameterNames();
+        if (isNew) {
+            for (String param : params) {
+                addTag(javadoc, tags.size(), TagElement.TAG_PARAM, param);
+            }
+        } else {
+            // find current params.
+            int index = 0;
+            Map<String, TagElement> current = Maps.newHashMap();
+            for (int i = 0; i < tags.size(); i++) {
+                TagElement tag = tags.get(i);
+                if (TagElement.TAG_PARAM.equals(tag.getTagName())) {
+                    if (current.isEmpty()) {
+                        index = i;
+                    }
+
+                    Object element = tag.fragments().size() > 0 ? tag
+                            .fragments().get(0) : null;
+                    if (null != element && element instanceof Name) {
+                        String name = ((Name) element).getFullyQualifiedName();
+                        current.put(name, tag);
+                    } else {
+                        current.put(String.valueOf(i), tag);
+                    }
+                } else {
+                    if (!current.isEmpty()) {
+                        break;
+                    }
+
+                    if (null == tag.getTagName())
+                        index = i + 1;
+                }
+            }
+
+            if (!current.isEmpty()) {
+                for (int i = 0; i < params.length; i++) {
+                    if (current.containsKey(params[i])) {
+                        TagElement tag = (TagElement) current.get(params[i]);
+                        int currentIndex = tags.indexOf(tag);
+                        if (currentIndex != i) {
+                            tags.remove(tag);
+                            tags.add(index + i, tag);
+                        }
+                        current.remove(params[i]);
+                    } else {
+                        addTag(javadoc, index + i, TagElement.TAG_PARAM,
+                                params[i]);
+                    }
+                }
+
+                // remove any other param tags.
+                for (TagElement tag : current.values()) {
+                    tags.remove(tag);
+                }
+            } else {
+                for (int i = 0; i < params.length; i++) {
+                    addTag(javadoc, index + i, TagElement.TAG_PARAM, params[i]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Add or update the return tag for the given method.
+     * 
+     * @param javadoc the javadoc instance.
+     * @param method the method.
+     * @param isNew true if we're adding to brand new javadoc.
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    protected void addUpdateReturnTag(Javadoc javadoc, IMethod method,
+            boolean isNew) throws Exception {
+        List<TagElement> tags = javadoc.tags();
+
+        // get return type from element.
+        if (!method.isConstructor()) {
+            String returnType = Signature.getSignatureSimpleName(method
+                    .getReturnType());
+            if (!"void".equals(returnType)) {
+                if (isNew) {
+                    addTag(javadoc, tags.size(), TagElement.TAG_RETURN, null);
+                } else {
+                    // search starting from the bottom since @return should be
+                    // near the end.
+                    int index = tags.size();
+                    for (int i = index - 1; i >= 0; i--) {
+                        TagElement tag = tags.get(i);
+                        // return tag already exists?
+                        if (TagElement.TAG_RETURN.equals(tag.getTagName())) {
+                            index = -1;
+                            break;
+                        }
+
+                        // if we hit the param tags, or the main text, insert
+                        // below them.
+                        if (TagElement.TAG_PARAM.equals(tag.getTagName())
+                                || null == tag.getTagName()) {
+                            index = i + 1;
+                            break;
+                        }
+                        index = i;
+                    }
+
+                    if (index > -1) {
+                        addTag(javadoc, index, TagElement.TAG_RETURN, null);
+                    }
+                }
+            } else {
+                // remove any return tag that may exists.
+                for (int i = tags.size() - 1; i >= 0; i--) {
+                    TagElement tag = tags.get(i);
+                    // return tag already exists?
+                    if (TagElement.TAG_RETURN.equals(tag.getTagName())) {
+                        tags.remove(tag);
+                    }
+                    // if we hit the param tags, or the main text we can stop.
+                    if (TagElement.TAG_PARAM.equals(tag.getTagName())
+                            || null == tag.getTagName()) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Add or update the throws tags for the given method.
+     * 
+     * @param javadoc the javadoc instance.
+     * @param method the method to do.
+     * @param isNew true if we're adding to brand new javadoc.
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    protected void addUpdateThrowsTag(Javadoc javadoc, IMethod method,
+            boolean isNew) throws Exception {
+        List<TagElement> tags = javadoc.tags();
+
+        // get throws exceptions from elements.
+        String[] exceptionTypes = method.getExceptionTypes();
+        if (isNew && exceptionTypes.length > 0) {
+            addTag(javadoc, tags.size(), null, null);
+            for (int i = 0; i < exceptionTypes.length; i++) {
+                addTag(javadoc, tags.size(), TagElement.TAG_THROWS,
+                        Signature.getSignatureSimpleName(exceptionTypes[i]));
+            }
+        } else {
+            // get current throws tags.
+            Map<String, TagElement> current = Maps.newHashMap();
+            int index = tags.size();
+            for (int i = index - 1; i >= 0; i--) {
+                TagElement tag = tags.get(i);
+                if (TagElement.TAG_THROWS.equals(tag.getTagName())) {
+                    index = index == tags.size() ? i + 1 : index;
+                    Name name = tag.fragments().isEmpty() ? null : (Name) tag
+                            .fragments().get(0);
+                    if (null != name) {
+                        String text = name.getFullyQualifiedName();
+                        String key = THROWS_PATTERN.matcher(text).replaceFirst(
+                                "$1");
+                        current.put(key, tag);
+                    } else {
+                        current.put(String.valueOf(i), tag);
+                    }
+                }
+
+                // if we hit the return tag, a param tag, or the main text we
+                // can stop.
+                if (TagElement.TAG_PARAM.equals(tag.getTagName())
+                        || TagElement.TAG_RETURN.equals(tag.getTagName())
+                        || null == tag.getTagName()) {
+                    break;
+                }
+            }
+
+            // see what needs to be added / removed.
+            for (int i = 0; i < exceptionTypes.length; i++) {
+                String name = Signature
+                        .getSignatureSimpleName(exceptionTypes[i]);
+                if (!current.containsKey(name)) {
+                    addTag(javadoc, index, TagElement.TAG_THROWS, name);
+                } else {
+                    current.remove(name);
+                }
+            }
+
+            // remove any left over throws clauses.
+            for (TagElement tag : current.values()) {
+                tags.remove(tag);
+            }
+        }
     }
 
 }
