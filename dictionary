@@ -55,3 +55,5 @@ enum
 javadoc
 params
 param
+distiguished
+varargs
