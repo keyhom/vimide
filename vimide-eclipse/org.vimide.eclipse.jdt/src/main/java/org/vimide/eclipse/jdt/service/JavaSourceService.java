@@ -687,4 +687,5 @@ public class JavaSourceService extends JavaBaseService {
     private String getAuthor() throws Exception {
         return System.getProperty("user.name", "");
     }
+    
 }
