@@ -28,7 +28,8 @@
 "
 " ----------------------------------------------------------------------------
 
-let s:command_java_format = "/java_src_format?project=<project>&file=<file>&hoffset=<hoffset>&toffset=<toffset>"
+let s:command_java_format = "/javaSrcFormat?project=<project>&file=<file>&hoffset=<hoffset>&toffset=<toffset>"
+let s:command_comment = "/javaDocComment?project=<project>&file=<file>&offset=<offset>"
 
 " ----------------------------------------------------------------------------
 "
@@ -69,6 +70,40 @@ function! vimide#java#src#Format(first, last)
 
   let result = vimide#Execute(command)
   if result != '0'
+    call vimide#util#Reload({'retab': 1})
+    write
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Add/Update the comments for the element under the cursor.
+"
+" Comment:
+" ----------------------------------------------------------------------------
+function! vimide#java#src#Comment()
+  let file = expand('%:p')
+  let project = vimide#project#impl#GetProject(file)
+
+  if '' == project
+    return
+  endif
+
+  " save the file to supply the dirty commit.
+  write
+
+  " current the file location.
+  let file = vimide#util#LegalPath(file)
+  let offset = vimide#util#GetCurrentElementOffset()
+
+  " silent updated.
+  let command = s:command_comment
+  let command = substitute(command, '<project>', project, '')
+  let command = substitute(command, '<file>', file, '')
+  let command = substitute(command, '<offset>', offset, '')
+
+  let result = vimide#Execute(command)
+
+  if '0' != result
     call vimide#util#Reload({'retab': 1})
     write
   endif

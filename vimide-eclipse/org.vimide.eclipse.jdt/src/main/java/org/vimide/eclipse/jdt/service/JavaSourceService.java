@@ -58,6 +58,9 @@ import org.slf4j.LoggerFactory;
 import org.vimide.eclipse.jdt.VimideJdtPlugin;
 import org.vimide.eclipse.jdt.util.ASTUtil;
 import org.vimide.eclipse.jdt.util.EclipseJdtUtil;
+import org.vimide.eclipse.jdt.util.MethodUtil;
+import org.vimide.eclipse.jdt.util.TypeInfo;
+import org.vimide.eclipse.jdt.util.TypeUtil;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -327,7 +330,7 @@ public class JavaSourceService extends JavaBaseService {
             if (isNew) {
                 addTag(javadoc, tags.size(), null, null);
                 addTag(javadoc, tags.size(), null, null);
-                addTag(javadoc, tags.size(), TagElement.TAG_AUTHOR, null);
+                addTag(javadoc, tags.size(), TagElement.TAG_AUTHOR, getAuthor());
             } else {
                 // check if author tag exists.
                 int index = -1;
@@ -352,7 +355,7 @@ public class JavaSourceService extends JavaBaseService {
                 }
 
                 // insert author tag if it doesn't exists.
-                String author = "";
+                String author = getAuthor();
                 if (index > -1) {
                     TagElement authorTag = javadoc.getAST().newTagElement();
                     TextElement authorText = javadoc.getAST().newTextElement();
@@ -389,9 +392,58 @@ public class JavaSourceService extends JavaBaseService {
             // see if method is overriding / implementing method from
             // superclass.
             IType parentType = null;
+            TypeInfo[] types = TypeUtil
+                    .getSuperTypes(method.getDeclaringType());
+            for (TypeInfo info : types) {
+                if (MethodUtil.containsMethod(info, method)) {
+                    parentType = info.getType();
+                    break;
+                }
+            }
+
+            // if an inherited method, add inheritDoc and @see
+            if (null != parentType && !method.isConstructor()) {
+                addTag(javadoc, tags.size(), null, INHERIT_DOC);
+            } else {
+                addTag(javadoc, tags.size(), null, null);
+            }
+        }
+
+        // only add/update tags if javadoc doesn't contain inheritDoc.
+        boolean update = true;
+        for (TagElement tag : tags) {
+            if (null == tag.getTagName() && tag.fragments().size() > 0) {
+                String text = "";
+                Object o = tag.fragments().get(0);
+                if (o instanceof TagElement) {
+                    text = ((TagElement) o).getTagName();
+                } else if (o instanceof TextElement) {
+                    text = ((TextElement) o).getText();
+                }
+
+                if (INHERIT_DOC.contains(text)) {
+                    update = false;
+                    break;
+                }
+            }
+        }
+
+        if (update) {
+            addUpdateParamTags(javadoc, method, isNew);
+            addUpdateReturnTag(javadoc, method, isNew);
+            addUpdateThrowsTag(javadoc, method, isNew);
         }
     }
 
+    /**
+     * Comments everything else.
+     * 
+     * @param src the source.
+     * @param javadoc the javadoc.
+     * @param element the java element instance.
+     * @param isNew true if there was no previous javadoc for this element.
+     * @throws Exception
+     */
     private void commentOther(ICompilationUnit src, Javadoc javadoc,
             IJavaElement element, boolean isNew) throws Exception {
         if (isNew) {
@@ -632,4 +684,7 @@ public class JavaSourceService extends JavaBaseService {
         }
     }
 
+    private String getAuthor() throws Exception {
+        return System.getProperty("user.name", "");
+    }
 }

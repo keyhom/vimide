@@ -112,7 +112,8 @@ public class ASTUtil {
     public static ASTNode findNode(CompilationUnit root, int offset)
             throws Exception {
         NodeFinder finder = new NodeFinder(root, offset, 1);
-        return finder.getCoveredNode();
+        return finder.getCoveringNode();
+
     }
 
     /**

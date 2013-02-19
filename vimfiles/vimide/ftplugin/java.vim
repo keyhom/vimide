@@ -64,4 +64,7 @@ command! -buffer Correct  :call vimide#java#src#Correct()
 " Validate:
 command! -buffer Validate :call vimide#lang#UpdateSrcFile('java', 1)
 
+" Comment:
+command! -buffer Comment :call vimide#java#src#Comment()
+
 " vim:ft=vim

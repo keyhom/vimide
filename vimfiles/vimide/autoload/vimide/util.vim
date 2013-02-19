@@ -409,4 +409,29 @@ function! vimide#util#ClearQuickfixList(...)
   call vimide#display#signs#Update()
 endfunction
 
+" ----------------------------------------------------------------------------
+" Gets the byte offset for the element under the cursor.
+"
+" GetCurrentElementOffset:
+" ----------------------------------------------------------------------------
+function! vimide#util#GetCurrentElementOffset()
+  let pos = getpos('.')
+
+  let line = getline('.')
+  " cursor not on the word.
+  if line[col('.') - 1] =~ '\W'
+    silent normal! w
+  " cursor not at the beginning of the word
+  elseif line[col('.') - 2] =~ '\W'
+    silent normal! b
+  endif
+
+  let offset = vimide#util#GetOffset()
+
+  " restore the cursor position.
+  call setpos('.', pos)
+
+  return offset
+endfunction
+
 " vim:ft=vim

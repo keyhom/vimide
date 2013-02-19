@@ -44,7 +44,7 @@ import org.vimide.eclipse.jdt.JavaSourceFacade;
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
-@WebServlet(urlPatterns = "/java_src_format")
+@WebServlet(urlPatterns = "/javaSrcFormat")
 public class JavaFormatServlet extends GenericVimideHttpServlet {
 
     private static final long serialVersionUID = 1L;
