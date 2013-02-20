@@ -23,10 +23,13 @@
 package org.vimide.eclipse.jdt.service;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -34,6 +37,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
@@ -41,6 +45,7 @@ import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
@@ -48,10 +53,18 @@ import org.eclipse.jdt.core.dom.TagElement;
 import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
+import org.eclipse.jdt.core.search.TypeNameMatch;
+import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
+import org.eclipse.jdt.internal.corext.codemanipulation.OrganizeImportsOperation;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
+import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
+import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,13 +76,16 @@ import org.vimide.eclipse.jdt.util.TypeInfo;
 import org.vimide.eclipse.jdt.util.TypeUtil;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * The service implementation for the java source functions.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
+@SuppressWarnings("restriction")
 public class JavaSourceService extends JavaBaseService {
 
     /**
@@ -687,5 +703,162 @@ public class JavaSourceService extends JavaBaseService {
     private String getAuthor() throws Exception {
         return System.getProperty("user.name", "");
     }
-    
+
+    /**
+     * @param src
+     */
+    public Object organizeImports(ICompilationUnit src, int offset)
+            throws Exception {
+        int oldLength = src.getBuffer().getLength();
+        if (oldLength == 0 || offset <= 0 || offset > oldLength) {
+            return null;
+        }
+
+        CompilationUnit astRoot = SharedASTProvider.getAST(src,
+                SharedASTProvider.WAIT_YES, null);
+
+        ChooseImports query = new ChooseImports(src.getJavaProject()
+                .getProject(), new String[] {});
+
+        CodeGenerationSettings settings = JavaPreferencesSettings
+                .getCodeGenerationSettings(src.getJavaProject());
+
+        OrganizeImportsOperation op = new OrganizeImportsOperation(src,
+                astRoot, settings.importIgnoreLowercase, true /* save */, true,
+                query);
+
+        TextEdit edit = op.createTextEdit(null);
+
+        if (null != query.choices && !query.choices.isEmpty()) {
+            return query.choices;
+        }
+
+        if (null != edit) {
+            JavaModelUtil.applyEdit(src, edit, true, null);
+            if (src.isWorkingCopy()) {
+                src.commitWorkingCopy(false, null);
+            }
+        }
+
+        // our own support for grouping imports based on package levels.
+        TextEdit groupingEdit = importGroupingEdit(src);
+        if (null != groupingEdit) {
+            if (null == edit)
+                edit = groupingEdit;
+            JavaModelUtil.applyEdit(src, groupingEdit, true, null);
+            if (src.isWorkingCopy())
+                src.commitWorkingCopy(false, null);
+        }
+
+        if (null != edit) {
+            if (edit.getOffset() < offset) {
+                offset += src.getBuffer().getLength() - oldLength;
+            }
+            
+            return /* Position */null;
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private TextEdit importGroupingEdit(ICompilationUnit src) throws Exception {
+        int separationLevel = 0;
+        CompilationUnit astRoot = SharedASTProvider.getAST(src,
+                SharedASTProvider.WAIT_YES, null);
+
+        List<ImportDeclaration> imports = astRoot.imports();
+        String lineDelim = src.findRecommendedLineSeparator();
+        MultiTextEdit edit = new MultiTextEdit();
+        ImportDeclaration next = null;
+
+        for (int i = imports.size() - 1; i >= 0; i--) {
+            ImportDeclaration imprt = imports.get(i);
+            int end = imprt.getStartPosition() + imprt.getLength()
+                    + lineDelim.length();
+            if (null != next
+                    && end == next.getStartPosition()
+                    && !ImportUtil.importsInSameGroup(separationLevel, imprt,
+                            next)) {
+                edit.addChild(new InsertEdit(end, lineDelim));
+            }
+            next = imprt;
+        }
+
+        return edit.getChildrenSize() > 0 ? edit : null;
+    }
+
+    private class ChooseImports implements
+            OrganizeImportsOperation.IChooseImportQuery {
+
+        private List<List<String>> choices;
+        private IProject project;
+        private Set<String> types;
+
+        /**
+         * Creates an new ChooseImports instance.
+         * 
+         * @param project
+         * @param types
+         */
+        public ChooseImports(IProject project, String[] types) {
+            this.project = project;
+            if (null != types) {
+                this.types = Sets.newHashSet(types);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public TypeNameMatch[] chooseImports(TypeNameMatch[][] choices,
+                ISourceRange[] range) {
+            List<TypeNameMatch> chosen = Lists.newArrayList();
+            this.choices = Lists.newArrayList();
+
+            try {
+                for (TypeNameMatch[] matches : choices) {
+                    boolean foundChoice = false;
+                    if (null != types && !types.isEmpty()) {
+                        for (TypeNameMatch match : matches) {
+                            if (types.contains(match.getFullyQualifiedName())) {
+                                foundChoice = true;
+                                chosen.add(match);
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!foundChoice) {
+                        List<String> names = Lists
+                                .newArrayListWithCapacity(matches.length);
+
+                        for (TypeNameMatch match : matches) {
+                            String name = match.getFullyQualifiedName();
+                            if (!ImportUtil.isImportExcluded(project, name)) {
+                                names.add(name);
+                            }
+                        }
+
+                        if (names.size() == 1) {
+                            for (TypeNameMatch match : matches) {
+                                if (names.get(0).equals(
+                                        match.getFullyQualifiedName())) {
+                                    chosen.add(match);
+                                    break;
+                                }
+                            }
+                        } else if (!names.isEmpty()) {
+                            Collections.sort(names);
+                            this.choices.add(names);
+                        }
+                    }
+                }
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            return chosen.toArray(new TypeNameMatch[chosen.size()]);
+        }
+    }
 }

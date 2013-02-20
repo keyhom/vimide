@@ -29,9 +29,15 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
+import org.vimide.eclipse.jdt.service.JavaSourceService;
 
 /**
  * Requests to organize imports for the specific source.
@@ -42,6 +48,8 @@ import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 public class OrganizeImportsServlet extends GenericVimideHttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(OrganizeImportsServlet.class.getName());
 
     @Override
     protected void doGet(VimideHttpServletRequest req,
@@ -55,6 +63,8 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
             return;
         }
 
+        // IJavaProject javaProject = JavaCore.create(project);
+
         final File file = getFile(req);
 
         if (null == file || !file.exists() || file.isDirectory()) {
@@ -62,8 +72,21 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
             return;
         }
 
-        // Be sure the project and the file is correct.
+        int offset = req.getIntParameter("offset", 0);
 
+        // Be sure the project and the file is correct.
+        JavaSourceService service = JavaSourceService.getInstance();
+        IPath path = new Path(file.getPath()).makeRelativeTo(project
+                .getLocation());
+        ICompilationUnit src = service.getCompilationUnit(project, path);
+
+        try {
+            service.organizeImports(src, offset);
+        } catch (final Exception e) {
+            LOGGER.error("", e);
+        }
+
+        resp.writeAsJson(1);
     }
 
 }

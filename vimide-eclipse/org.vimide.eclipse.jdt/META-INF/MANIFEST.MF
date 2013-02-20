@@ -11,6 +11,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jdt,
  org.eclipse.jdt.core,
  org.eclipse.jdt.launching,
+ org.eclipse.jdt.ui,
  org.eclipse.text,
  org.vimide.eclipse.core
 Export-Package: org.vimide.eclipse.jdt

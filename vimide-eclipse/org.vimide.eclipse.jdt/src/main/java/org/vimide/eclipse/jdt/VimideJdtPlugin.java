@@ -31,7 +31,6 @@ import org.vimide.eclipse.jdt.servlet.source.JavaDocCommentServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaFormatServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaUpdateSrcServlet;
 import org.vimide.eclipse.jdt.servlet.source.OrganizeImportsServlet;
-import org.vimide.eclipse.jdt.servlet.source.TestServlet;
 
 /**
  * Vimide JDT plugin for eclipse.
@@ -54,7 +53,6 @@ public class VimideJdtPlugin extends VimidePlugin {
                 OrganizeImportsServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 JavaDocCommentServlet.class);
-        VimideHttpServer.getInstance().registerServlet(TestServlet.class);
     }
 
 }
