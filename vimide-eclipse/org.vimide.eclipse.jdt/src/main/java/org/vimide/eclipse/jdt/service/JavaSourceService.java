@@ -68,6 +68,7 @@ import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.vimide.core.util.Position;
 import org.vimide.eclipse.jdt.VimideJdtPlugin;
 import org.vimide.eclipse.jdt.util.ASTUtil;
 import org.vimide.eclipse.jdt.util.EclipseJdtUtil;
@@ -707,8 +708,8 @@ public class JavaSourceService extends JavaBaseService {
     /**
      * @param src
      */
-    public Object organizeImports(ICompilationUnit src, int offset)
-            throws Exception {
+    public Object organizeImports(ICompilationUnit src, int offset,
+            String... types) throws Exception {
         int oldLength = src.getBuffer().getLength();
         if (oldLength == 0 || offset <= 0 || offset > oldLength) {
             return null;
@@ -718,7 +719,7 @@ public class JavaSourceService extends JavaBaseService {
                 SharedASTProvider.WAIT_YES, null);
 
         ChooseImports query = new ChooseImports(src.getJavaProject()
-                .getProject(), new String[] {});
+                .getProject(), types);
 
         CodeGenerationSettings settings = JavaPreferencesSettings
                 .getCodeGenerationSettings(src.getJavaProject());
@@ -754,8 +755,9 @@ public class JavaSourceService extends JavaBaseService {
             if (edit.getOffset() < offset) {
                 offset += src.getBuffer().getLength() - oldLength;
             }
-            
-            return /* Position */null;
+
+            return Position.fromOffset(src.getResource().getLocation()
+                    .toOSString(), null, offset, 0);
         }
         return null;
     }

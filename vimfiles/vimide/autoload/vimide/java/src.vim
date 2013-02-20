@@ -30,6 +30,7 @@
 
 let s:command_java_format = "/javaSrcFormat?project=<project>&file=<file>&hoffset=<hoffset>&toffset=<toffset>"
 let s:command_comment = "/javaDocComment?project=<project>&file=<file>&offset=<offset>"
+let s:command_organize_imports = "/organizeImports?project=<project>&file=<file>&offset=<offset>"
 
 " ----------------------------------------------------------------------------
 "
@@ -107,6 +108,82 @@ function! vimide#java#src#Comment()
     call vimide#util#Reload({'retab': 1})
     write
   endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Organize imports by adding missing and clean up.
+"
+" OrganizeImports:
+" ----------------------------------------------------------------------------
+function! vimide#java#src#OrganizeImports(...)
+  let file = expand('%:p')
+  let project = vimide#project#impl#GetProject(file)
+
+  if '' == project
+    return
+  endif
+
+  " save the file to supply the dirty commit.
+  write
+
+  " current the file location.
+  let file = vimide#util#LegalPath(file)
+  let offset = vimide#util#GetCurrentElementOffset()
+
+  let command = s:command_organize_imports
+  let command = substitute(command, '<project>', project, '')
+  let command = substitute(command, '<file>', file, '')
+  let command = substitute(command, '<offset>', offset, '')
+
+  if a:0
+    let command .= '&types=' . join(a:1, ',')
+  endif
+
+  let result = vimide#Execute(command)
+
+  if type(result) == g:STRING_TYPE
+    call vimide#print#EchoError(command)
+    return
+  endif
+
+  if type(result) == g:DICT_TYPE
+    call vimide#util#Reload({'pos' : [result.line, result.column]})
+    call vimide#lang#UpdateSrcFile('java', 1)
+    return
+  endif
+
+  if type(result) != g:LIST_TYPE
+    return
+  endif
+
+  let chosen = []
+  for choices in result
+    let choice = vimide#java#src#ImportPrompt(choices)
+    if choice == ''
+      return
+    endif
+    call add(chosen, choice)
+  endfor
+
+  if len(chosen)
+    call vimide#java#src#OrganizeImports(chosen)
+  endif
+
+endfunction
+
+" ----------------------------------------------------------------------------
+" Prompts the user to choose the class to import.
+"
+" ImportPrompt:
+"   choices - the list to choose.
+" ----------------------------------------------------------------------------
+function! vimide#java#src#ImportPrompt(choices)
+  let response = vimide#util#PromptList("Choose the class to import", a:choices)
+  if response == -1
+    return ''
+  endif
+
+  return get(a:choices, response)
 endfunction
 
 " vim:ft=vim

@@ -28,6 +28,7 @@ import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
@@ -38,6 +39,8 @@ import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 import org.vimide.eclipse.jdt.service.JavaSourceService;
+
+import com.google.common.base.Strings;
 
 /**
  * Requests to organize imports for the specific source.
@@ -73,6 +76,12 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
         }
 
         int offset = req.getIntParameter("offset", 0);
+        String typeArgs = req.getParameter("types");
+        String[] types = new String[] {};
+
+        if (!Strings.isNullOrEmpty(typeArgs)) {
+            types = StringUtils.split(typeArgs, ",");
+        }
 
         // Be sure the project and the file is correct.
         JavaSourceService service = JavaSourceService.getInstance();
@@ -81,12 +90,14 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
         ICompilationUnit src = service.getCompilationUnit(project, path);
 
         try {
-            service.organizeImports(src, offset);
+            Object object = service.organizeImports(src, offset, types);
+            if (null == object)
+                object = 1;
+            resp.writeAsJson(object);
         } catch (final Exception e) {
             LOGGER.error("", e);
+            resp.writeAsJson(e.getMessage());
         }
-
-        resp.writeAsJson(1);
     }
 
 }

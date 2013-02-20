@@ -434,4 +434,64 @@ function! vimide#util#GetCurrentElementOffset()
   return offset
 endfunction
 
+" ----------------------------------------------------------------------------
+" Creates a prompt for the user using the supplied prompt string and list of
+" items to choose from. Returns -1 if the list is empty or if the user
+" canceled, and 0 if the list contains only on item.
+"
+" PromptList:
+"   prompt      - 
+"   list        -
+"   [highlight] - 
+" ----------------------------------------------------------------------------
+function! vimide#util#PromptList(prompt, list, ...)
+  " no elements, no prompt
+  if empty(a:list)
+    return -1
+  endif
+
+  " only one element, on need to choose.
+  if len(a:list) == 1
+    return 0
+  endif
+
+  let prompt = ""
+  let index = 0
+  for item in a:list
+    let prompt = prompt . index . ") " . item . "\n"
+    let index = index + 1
+  endfor
+
+  exec "echohl " . (a:0 ? a:1 : g:VIdeInfoHighlight)
+
+  try 
+    " clean any previous messages.
+    redraw
+    try 
+      let response = input(prompt . "\n" . a:prompt . ": ")
+    catch
+      " echoing the list prompt vs. using it in the input() avoids apparent
+      " vim bug that causes "Internal error: get_tv_string_buf()".
+      echo prompt . "\n"
+      let response = input(a:prompt . ": ")
+    endtry
+
+    while response !~ '\(^$\|^[0-9]\+$\)' || 
+          \ response < 0 ||
+          \ response > (len(a:list) - 1)
+      let response = input("You must choose a value between " . 
+            \ 0 . " and " . (len(a:list) - 1) . ". (Ctrl-C to Cancel): ")
+    endwhile
+  finally
+    echohl None
+    redraw!
+  endtry
+
+  if response == ''
+    return -1
+  endif
+
+  return response
+endfunction
+
 " vim:ft=vim

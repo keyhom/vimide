@@ -67,4 +67,7 @@ command! -buffer Validate :call vimide#lang#UpdateSrcFile('java', 1)
 " Comment:
 command! -buffer Comment :call vimide#java#src#Comment()
 
+" OrganizeImports:
+command! -buffer OrganizeImports :call vimide#java#src#OrganizeImports()
+
 " vim:ft=vim
