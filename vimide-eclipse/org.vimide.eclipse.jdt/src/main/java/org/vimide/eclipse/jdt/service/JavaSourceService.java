@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
@@ -195,22 +196,34 @@ public class JavaSourceService extends JavaBaseService {
                 if (bByteOffset >= 0 && eByteOffset > 0) {
                     // process the offset.
                     byte[] byteSource = source.getBytes();
-                    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                    outStream.write(byteSource, 0, bByteOffset);
+                    ByteArrayOutputStream outStream = null;
+                    String sourcePrefix = null;
+                    try {
+                        outStream = new ByteArrayOutputStream();
+                        outStream.write(byteSource, 0, bByteOffset);
+                        sourcePrefix = outStream.toString();
+                    } finally {
+                        if (null != outStream)
+                            IOUtils.closeQuietly(outStream);
+                    }
 
-                    String sourcePrefix = outStream.toString();
+                    try {
+                        outStream = new ByteArrayOutputStream();
+                        outStream.write(byteSource, bByteOffset, eByteOffset
+                                - bByteOffset > 0 ? eByteOffset - bByteOffset
+                                : 0);
+                        String sourceRoot = outStream.toString();
 
-                    outStream = new ByteArrayOutputStream();
-                    outStream.write(byteSource, bByteOffset, eByteOffset
-                            - bByteOffset > 0 ? eByteOffset - bByteOffset : 0);
-                    String sourceRoot = outStream.toString();
+                        int bCharOffset = sourcePrefix.length();
+                        int eCharOffset = bCharOffset + sourceRoot.length();
+                        int charLength = eCharOffset - bCharOffset;
 
-                    int bCharOffset = sourcePrefix.length();
-                    int eCharOffset = bCharOffset + sourceRoot.length();
-                    int charLength = eCharOffset - bCharOffset;
-
-                    startPosition = bCharOffset;
-                    contentLength = charLength;
+                        startPosition = bCharOffset;
+                        contentLength = charLength;
+                    } finally {
+                        if (null != outStream)
+                            IOUtils.closeQuietly(outStream);
+                    }
                 } else {
                     startPosition = 0;
                     contentLength = source.length();
@@ -280,7 +293,7 @@ public class JavaSourceService extends JavaBaseService {
     public void generateElementComment(ICompilationUnit src, int offset,
             IJavaElement element) throws Exception {
         if (null != src && null != element) {
-            CompilationUnit cu = ASTUtil.getCompilationUnit(src, true);
+            CompilationUnit cu = ASTUtil.getCompilationUnit(src, true); // src.getBuffer().getContents()
             ASTNode node = ASTUtil.findNode(cu, offset, element);
             if (null != node) {
                 // performs the comment.

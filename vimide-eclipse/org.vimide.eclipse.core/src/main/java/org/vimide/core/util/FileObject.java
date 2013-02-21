@@ -22,6 +22,7 @@
  */
 package org.vimide.core.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -45,6 +46,7 @@ public class FileObject {
     private InputStream stream;
     private Integer[] offsets;
     private String[] multiByteLines;
+    private String contents;
 
     /**
      * Creates an new FileObject instance.
@@ -95,10 +97,15 @@ public class FileObject {
      */
     public String getContents() {
         try {
-            return IOUtils.toString(stream);
+            if (null == contents && null != stream)
+                return IOUtils.toString(stream);
         } catch (final IOException e) {
-            return StringUtils.EMPTY;
+            e.printStackTrace();
+        } finally {
+            if (null != stream)
+                IOUtils.closeQuietly(stream);
         }
+        return StringUtils.EMPTY;
     }
 
     /**
@@ -250,6 +257,30 @@ public class FileObject {
         }
         // not found
         return null;
+    }
+
+    /**
+     * Gets the char length by the supplied bytes.
+     * 
+     * @param bytes the bytes size.
+     * @return the value of char offset.
+     */
+    public int getCharLength(int bytes) {
+        if (bytes > 0) {
+            byte[] buffer = getContents().getBytes();
+            ByteArrayOutputStream outStream = null;
+
+            try {
+                outStream = new ByteArrayOutputStream();
+                outStream.write(buffer, 0, bytes);
+
+                return outStream.toString().length();
+            } finally {
+                if (null != outStream)
+                    IOUtils.closeQuietly(outStream);
+            }
+        }
+        return 0;
     }
 
     @Override

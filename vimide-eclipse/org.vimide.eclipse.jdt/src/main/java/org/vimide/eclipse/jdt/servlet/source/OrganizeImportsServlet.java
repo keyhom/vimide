@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
+import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 import org.vimide.eclipse.jdt.service.JavaSourceService;
 
@@ -66,8 +67,6 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
             return;
         }
 
-        // IJavaProject javaProject = JavaCore.create(project);
-
         final File file = getFile(req);
 
         if (null == file || !file.exists() || file.isDirectory()) {
@@ -76,6 +75,12 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
         }
 
         int offset = req.getIntParameter("offset", 0);
+        
+        if (0 < offset) {
+            // convert the byte offset to char offset.
+            offset = new FileObject(file).getCharLength(offset);
+        }
+        
         String typeArgs = req.getParameter("types");
         String[] types = new String[] {};
 

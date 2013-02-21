@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
+import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 import org.vimide.eclipse.jdt.service.JavaSourceService;
 
@@ -100,6 +101,9 @@ public class JavaDocCommentServlet extends GenericVimideHttpServlet {
             resp.sendError(403);
             return;
         }
+
+        // convert the byte offset to char offset.
+        offset = new FileObject(file).getCharLength(offset);
 
         IJavaElement element = null;
         try {
