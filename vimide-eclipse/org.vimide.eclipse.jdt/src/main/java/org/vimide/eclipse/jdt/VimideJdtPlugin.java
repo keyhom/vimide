@@ -26,6 +26,7 @@ package org.vimide.eclipse.jdt;
 import org.osgi.framework.BundleContext;
 import org.vimide.core.server.VimideHttpServer;
 import org.vimide.eclipse.core.VimidePlugin;
+import org.vimide.eclipse.jdt.servlet.CodeCompleteServlet;
 import org.vimide.eclipse.jdt.servlet.JVMListServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaDocCommentServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaFormatServlet;
@@ -53,6 +54,8 @@ public class VimideJdtPlugin extends VimidePlugin {
                 OrganizeImportsServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 JavaDocCommentServlet.class);
+        VimideHttpServer.getInstance().registerServlet(
+                CodeCompleteServlet.class);
     }
 
 }

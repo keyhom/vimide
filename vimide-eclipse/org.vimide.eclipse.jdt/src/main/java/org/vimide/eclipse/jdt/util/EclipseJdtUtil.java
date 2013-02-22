@@ -124,4 +124,22 @@ public class EclipseJdtUtil {
         }
         return null;
     }
+
+    /**
+     * Gets the primary element ( compilation unit or class file ) for the
+     * supplied element.
+     * 
+     * @param element the element.
+     * @return the primary element.
+     */
+    public static IJavaElement getPrimaryElement(IJavaElement element) {
+        IJavaElement parent = element;
+
+        while (parent.getElementType() != IJavaElement.COMPILATION_UNIT
+                && parent.getElementType() != IJavaElement.CLASS_FILE) {
+            parent = parent.getParent();
+        }
+
+        return parent;
+    }
 }

@@ -876,4 +876,9 @@ public class JavaSourceService extends JavaBaseService {
             return chosen.toArray(new TypeNameMatch[chosen.size()]);
         }
     }
+
+    public boolean isImportExcluded(IProject project, String name)
+            throws Exception {
+        return ImportUtil.isImportExcluded(project, name);
+    }
 }
