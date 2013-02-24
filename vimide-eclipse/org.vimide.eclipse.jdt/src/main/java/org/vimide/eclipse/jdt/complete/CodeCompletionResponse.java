@@ -27,6 +27,8 @@ import java.util.Map;
 
 import org.vimide.eclipse.core.complete.CodeCompletionResult;
 
+import com.google.common.collect.Maps;
+
 /**
  * Serializables response object for java code completion.
  * 
@@ -50,5 +52,18 @@ public class CodeCompletionResponse {
         this.completions = completions;
         this.error = error;
         this.imports = imports;
+    }
+
+    /**
+     * Exports the response object as map.
+     * 
+     * @return the map of response.
+     */
+    public Map<String, Object> toMap() {
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("completions", null != completions ? completions : "");
+        result.put("error", null != error ? error : "");
+        result.put("imports", null != imports ? imports : "");
+        return result;
     }
 }

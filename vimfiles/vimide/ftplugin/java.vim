@@ -35,6 +35,28 @@ if !exists('g:VIdeJavaValidate')
   let g:VIdeJavaValidate = 1
 endif
 
+if !exists('g:VIdeJavaSetCommonOptions')
+  let g:VIdeJavaSetCommonOptions = 1
+endif
+
+" ----------------------------------------------------------------------------
+" 
+" Options:
+"
+" ----------------------------------------------------------------------------
+
+setlocal completefunc=vimide#java#complete#CodeComplete
+
+if g:VIdeJavaSetCommonOptions
+  " allow cpp keywords in java files (delete, friend, union, template, etc)
+  let java_allow_cpp_keywords = 1
+
+  " tell vim how to search for included files.
+  setlocal include=^\s*import
+  setlocal includeexpr=substitute(v:fname,'\\.','/','g')
+  setlocal suffixesadd=.java
+endif
+
 " ----------------------------------------------------------------------------
 "
 " Autocmds:

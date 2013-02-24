@@ -168,4 +168,5 @@ public class CodeCompletionResult {
         return new HashCodeBuilder(18, 38).append(completion).append(menu)
                 .toHashCode();
     }
+
 }

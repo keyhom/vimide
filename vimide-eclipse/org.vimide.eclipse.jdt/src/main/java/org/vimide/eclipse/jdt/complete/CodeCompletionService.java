@@ -44,7 +44,7 @@ import com.google.common.collect.Lists;
 @SuppressWarnings("restriction")
 public class CodeCompletionService extends JavaBaseService {
 
-    private static final Comparator<CodeCompletionResult> COMPLETION_COMPARATOR = null;
+    private static final Comparator<CodeCompletionResult> COMPLETION_COMPARATOR = new CodeCompletionComparator();
     private static final String COMPACT = "compact";
 
     // private static final String STANDARD = "standard";
@@ -105,7 +105,7 @@ public class CodeCompletionService extends JavaBaseService {
         }
 
         return new CodeCompletionResponse(results, collector.getError(),
-                collector.getImports());
+                collector.getImports()).toMap();
     }
 
     /**
@@ -125,9 +125,11 @@ public class CodeCompletionService extends JavaBaseService {
         if (proposal instanceof JavaCompletionProposal) {
             JavaCompletionProposal lazy = (JavaCompletionProposal) proposal;
             completion = lazy.getReplacementString();
+            completion = completion.substring(lazy.getReplacementLength());
         } else if (proposal instanceof LazyJavaCompletionProposal) {
             LazyJavaCompletionProposal lazy = (LazyJavaCompletionProposal) proposal;
-            completion = lazy.getReplacementString();
+            completion = lazy.getReplacementString();  // lazy.getReplacementLength()
+            completion = completion.substring(lazy.getReplacementLength());
         }
 
         int kind = collector.getProposal(index).getKind();

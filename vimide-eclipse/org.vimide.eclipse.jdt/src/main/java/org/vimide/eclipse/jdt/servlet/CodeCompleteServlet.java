@@ -30,8 +30,6 @@ import javax.servlet.annotation.WebServlet;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaCore;
@@ -48,7 +46,7 @@ import org.vimide.eclipse.jdt.complete.CodeCompletionService;
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
-@WebServlet(urlPatterns = "javaComplete")
+@WebServlet(urlPatterns = "/javaComplete")
 public class CodeCompleteServlet extends GenericVimideHttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -89,11 +87,11 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
         // Obtains the compilation unit with src.
         IFile iFile = project.getFile(new Path(file.getPath())
                 .makeRelativeTo(project.getLocation()));
-        try {
-            iFile.refreshLocal(IResource.DEPTH_INFINITE, null);
-        } catch (final CoreException e) {
-            LOGGER.error("", e);
-        }
+        // try {
+        //     iFile.refreshLocal(IResource.DEPTH_INFINITE, null);
+        // } catch (final CoreException e) {
+        //     LOGGER.error("", e);
+        // }
 
         String layout = req.getNotNullParameter("layout");
         ICompilationUnit src = JavaCore.createCompilationUnitFrom(iFile);

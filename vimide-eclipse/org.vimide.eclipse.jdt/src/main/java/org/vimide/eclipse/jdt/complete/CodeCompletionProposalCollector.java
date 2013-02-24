@@ -85,8 +85,8 @@ public class CodeCompletionProposalCollector extends
                 return;
             }
 
-            if (CompletionProposal.POTENTIAL_METHOD_DECLARATION != proposal
-                    .getKind()) {
+            // if (CompletionProposal.POTENTIAL_METHOD_DECLARATION != proposal
+            //         .getKind()) {
                 switch (proposal.getKind()) {
                     case CompletionProposal.KEYWORD:
                     case CompletionProposal.PACKAGE_REF:
@@ -100,12 +100,13 @@ public class CodeCompletionProposalCollector extends
                     case CompletionProposal.LOCAL_VARIABLE_REF:
                     case CompletionProposal.VARIABLE_DECLARATION:
                     case CompletionProposal.ANNOTATION_ATTRIBUTE_REF:
+                    case CompletionProposal.POTENTIAL_METHOD_DECLARATION:
                         proposals.add(proposal);
                         super.accept(proposal);
                         break;
                     default:
                         // do nothing.
-                }
+                // }
             }
         } catch (final IllegalArgumentException e) {
             // all signature processing method may throw IAEs
