@@ -169,13 +169,15 @@ function! vimide#java#complete#CodeComplete(findstart, base)
       " wrap info from html to text.
       " let info = 
       let info = menu
+      let abbr = entry.abbreviation
 
       let dict = {
             \ 'word': word,
+            \ 'abbr': abbr,
             \ 'menu': menu,
             \ 'info': info,
             \ 'kind': entry.type,
-            \ 'dup' : 1,
+            \ 'dup' : 0,
             \ 'icase': !g:VIdeJavaCompleteCaseSensitive,
             \ }
 

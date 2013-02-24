@@ -74,6 +74,7 @@ public class CodeCompletionResult {
     }
 
     private String completion;
+    private String abbreviation;
     private String menu;
     private String info;
     private String type;
@@ -86,9 +87,10 @@ public class CodeCompletionResult {
      * @param info
      * @param type
      */
-    public CodeCompletionResult(String completion, String menu, String info,
+    public CodeCompletionResult(String completion, String abbreviation, String menu, String info,
             String type) {
         this.completion = completion;
+        this.abbreviation = abbreviation;
         this.menu = menu;
         this.info = info;
         this.type = null != type ? type : StringUtils.EMPTY;
@@ -141,6 +143,15 @@ public class CodeCompletionResult {
      */
     public String getType() {
         return type;
+    }
+    
+    /**
+     * Gets the abbreviation of this completion.
+     * 
+     * @return the abbreviation.
+     */
+    public String getAbbreviation() {
+        return abbreviation;
     }
 
     /**

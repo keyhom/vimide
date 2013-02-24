@@ -121,15 +121,16 @@ public class CodeCompletionService extends JavaBaseService {
             IJavaCompletionProposal proposal) {
         String completion = null;
         String menu = proposal.getDisplayString();
+        String abbreviation = null;
 
         if (proposal instanceof JavaCompletionProposal) {
             JavaCompletionProposal lazy = (JavaCompletionProposal) proposal;
-            completion = lazy.getReplacementString();
-            completion = completion.substring(lazy.getReplacementLength());
+            abbreviation = lazy.getReplacementString();
+            completion = abbreviation.substring(lazy.getReplacementLength());
         } else if (proposal instanceof LazyJavaCompletionProposal) {
             LazyJavaCompletionProposal lazy = (LazyJavaCompletionProposal) proposal;
-            completion = lazy.getReplacementString();  // lazy.getReplacementLength()
-            completion = completion.substring(lazy.getReplacementLength());
+            abbreviation = lazy.getReplacementString();
+            completion = abbreviation.substring(lazy.getReplacementLength());
         }
 
         int kind = collector.getProposal(index).getKind();
@@ -180,6 +181,7 @@ public class CodeCompletionService extends JavaBaseService {
         // overhead involved with retrieving it for every completion regardless
         // of whether the user ever views it.
 
-        return new CodeCompletionResult(completion, menu, menu, type);
+        return new CodeCompletionResult(completion, abbreviation, menu, menu,
+                type);
     }
 }
