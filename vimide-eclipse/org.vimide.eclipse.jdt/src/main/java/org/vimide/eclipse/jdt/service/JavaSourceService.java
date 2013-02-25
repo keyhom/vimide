@@ -33,6 +33,7 @@ import org.apache.commons.io.IOUtils;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -49,14 +50,21 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.TagElement;
 import org.eclipse.jdt.core.dom.TextElement;
+import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jdt.core.search.TypeNameMatch;
+import org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation;
+import org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation.IChooseImportQuery;
+import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationMessages;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
+import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.codemanipulation.OrganizeImportsOperation;
+import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.jdt.ui.SharedASTProvider;
@@ -718,9 +726,6 @@ public class JavaSourceService extends JavaBaseService {
         return System.getProperty("user.name", "");
     }
 
-    /**
-     * @param src
-     */
     public Object organizeImports(ICompilationUnit src, int offset,
             String... types) throws Exception {
         int oldLength = src.getBuffer().getLength();
@@ -775,6 +780,62 @@ public class JavaSourceService extends JavaBaseService {
         return null;
     }
 
+    public Object importType(ICompilationUnit src, int offset, String typeName)
+            throws Exception {
+        TextEdit edits = null;
+        int oldLength = src.getBuffer().getLength();
+        if (!Strings.isNullOrEmpty(typeName)) {
+            CompilationUnit astRoot = SharedASTProvider.getAST(src,
+                    SharedASTProvider.WAIT_YES, null);
+
+            edits = new MultiTextEdit();
+            ImportRewrite importRewrite = StubUtility.createImportRewrite(
+                    astRoot, true);
+            ContextSensitiveImportRewriteContext context = new ContextSensitiveImportRewriteContext(
+                    astRoot, offset, importRewrite);
+            String res = importRewrite.addImport(typeName, context);
+            if (typeName.equals(res)) {
+                return CodeGenerationMessages.AddImportsOperation_error_importclash;
+            }
+
+            TextEdit rewrite = importRewrite.rewriteImports(null);
+            edits.addChild(rewrite);
+            JavaModelUtil.applyEdit(src, edits, true, null);
+        } else {
+            ChooseImport query = new ChooseImport(src.getJavaProject()
+                    .getProject(), typeName);
+            try {
+                AddImportsOperation op = new AddImportsOperation(src, offset,
+                        1, query, true, true);
+                op.run(null);
+                edits = op.getResultingEdit();
+                if (null == edits) {
+                    IStatus status = op.getStatus();
+                    return status.getSeverity() != IStatus.OK ? status
+                            .getMessage() : null;
+                }
+            } catch (OperationCanceledException e) {
+                return query.choices;
+            }
+        }
+
+        TextEdit groupingEdit = importGroupingEdit(src, offset);
+        if (null != groupingEdit) {
+            JavaModelUtil.applyEdit(src, groupingEdit, true, null);
+        }
+
+        if (src.isWorkingCopy()) {
+            src.commitWorkingCopy(false, null);
+        }
+
+        if (edits.getOffset() < offset) {
+            offset += src.getBuffer().getLength() - oldLength;
+        }
+
+        return Position.fromOffset(
+                src.getResource().getLocation().toOSString(), null, offset, 0);
+    }
+
     @SuppressWarnings("unchecked")
     private TextEdit importGroupingEdit(ICompilationUnit src) throws Exception {
         int separationLevel = 0;
@@ -802,6 +863,101 @@ public class JavaSourceService extends JavaBaseService {
         return edit.getChildrenSize() > 0 ? edit : null;
     }
 
+    private TextEdit importGroupingEdit(ICompilationUnit src, int offset)
+            throws Exception {
+        int separationLevel = 0;
+        CompilationUnit astRoot = SharedASTProvider.getAST(src,
+                SharedASTProvider.WAIT_YES, null);
+        String lineDelim = src.findRecommendedLineSeparator();
+        ASTNode node = NodeFinder.perform(astRoot, offset, 1);
+        MultiTextEdit edit = new MultiTextEdit();
+        if (null != node && ASTNode.IMPORT_DECLARATION == node.getNodeType()) {
+            ImportDeclaration imprt = (ImportDeclaration) node;
+            int end = node.getStartPosition() + node.getLength()
+                    + lineDelim.length();
+            ASTNode next = NodeFinder.perform(astRoot, end, 1);
+
+            if (null != next
+                    && ASTNode.IMPORT_DECLARATION == next.getNodeType()) {
+                ImportDeclaration nextImprt = (ImportDeclaration) next;
+                if (ImportUtil.importsInSameGroup(separationLevel, imprt,
+                        nextImprt)) {
+                    edit.addChild(new InsertEdit(end, lineDelim));
+                }
+            }
+
+            ASTNode prev = NodeFinder.perform(astRoot,
+                    offset - (lineDelim.length() + 1), 1);
+            if (null != prev
+                    && ASTNode.IMPORT_DECLARATION == prev.getNodeType()) {
+                ImportDeclaration prevImprt = (ImportDeclaration) prev;
+                if (!ImportUtil.importsInSameGroup(separationLevel, imprt,
+                        prevImprt)) {
+                    end = prev.getStartPosition() + prev.getLength()
+                            + lineDelim.length();
+                    edit.addChild(new InsertEdit(end, lineDelim));
+                }
+            }
+        }
+        return edit.getChildrenSize() > 0 ? edit : null;
+    }
+
+    /**
+     * 
+     * @author keyhom (keyhom.c@gmail.com)
+     */
+    private class ChooseImport implements IChooseImportQuery {
+
+        private List<String> choices;
+        private IProject project;
+        private String type;
+
+        /**
+         * Creates an new ChooseImport instance.
+         * 
+         * @param project
+         * @param type
+         */
+        public ChooseImport(IProject project, String type) {
+            this.project = project;
+            this.type = type;
+        }
+
+        @Override
+        public TypeNameMatch chooseImport(TypeNameMatch[] choices, String name) {
+            if (null != this.type) {
+                for (TypeNameMatch match : choices) {
+                    if (this.type.equals(match.getFullyQualifiedName())) {
+                        return match;
+                    }
+                }
+            }
+
+            if (null == this.choices) { // just in case to prevent infinite
+                try {
+                    this.choices = Lists
+                            .newArrayListWithCapacity(choices.length);
+                    for (TypeNameMatch match : choices) {
+                        String fqn = match.getFullyQualifiedName();
+                        if (!ImportUtil.isImportExcluded(project, fqn)
+                                && !this.choices.contains(fqn)) {
+                            this.choices.add(fqn);
+                        }
+                    }
+
+                    if (this.choices.size() == 1) {
+                        type = this.choices.get(0);
+                        return chooseImport(choices, name);
+                    }
+                    Collections.sort(this.choices);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return null;
+        }
+    }
+
     private class ChooseImports implements
             OrganizeImportsOperation.IChooseImportQuery {
 
@@ -815,7 +971,7 @@ public class JavaSourceService extends JavaBaseService {
          * @param project
          * @param types
          */
-        public ChooseImports(IProject project, String[] types) {
+        public ChooseImports(IProject project, String... types) {
             this.project = project;
             if (null != types) {
                 this.types = Sets.newHashSet(types);

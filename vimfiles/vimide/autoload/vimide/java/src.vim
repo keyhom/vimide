@@ -30,7 +30,8 @@
 
 let s:command_java_format = "/javaSrcFormat?project=<project>&file=<file>&hoffset=<hoffset>&toffset=<toffset>"
 let s:command_comment = "/javaDocComment?project=<project>&file=<file>&offset=<offset>"
-let s:command_organize_imports = "/organizeImports?project=<project>&file=<file>&offset=<offset>"
+let s:command_import = "/javaImport?project=<project>&file=<file>&offset=<offset>"
+let s:command_organize_imports = "/javaOrganizeImports?project=<project>&file=<file>&offset=<offset>"
 
 " ----------------------------------------------------------------------------
 "
@@ -107,6 +108,64 @@ function! vimide#java#src#Comment()
   if '0' != result
     call vimide#util#Reload({'retab': 1})
     write
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Imports the current element.
+"
+" Import:
+"   [types] - 
+" ----------------------------------------------------------------------------
+function! vimide#java#src#Import(...)
+  let file = expand('%:p')
+  let project = vimide#project#impl#GetProject(file)
+
+  if '' == project
+    return
+  endif
+
+  if !a:0
+    let name = expand('<cword>')
+    if !vimide#java#util#IsValidIdentifier(name) || vimide#java#util#IsKeyword(name)
+      call vimide#print#EchoError("'" . name . "' not a classname.")
+      return
+    endif
+  endif
+
+  let offset = vimide#util#GetOffset()
+  let command = s:command_import
+  let command = substitute(command, '<project>', project, '')
+  let command = substitute(command, '<file>', file, '')
+  let command = substitute(command, '<offset>', offset, '')
+
+  if a:0
+    let command .= '&type=' . a:1
+  endif
+
+  let result = vimide#Execute(command)
+
+  if type(result) == g:STRING_TYPE
+    call vimide#print#EchoError(result)
+    return
+  endif
+
+  if type(result) == g:DICT_TYPE
+    call vimide#util#Reload({'pos': [result.line, result.column]})
+    call vimide#lang#UpdateSrcFile('java', 1)
+    if result.offset != offset
+      call vimide#print#Echo('Imported ' . (a:0 ? a:1 : ''))
+    endif
+    return
+  endif
+
+  if type(result) != g:LIST_TYPE
+    return
+  endif
+
+  let choice = vimide#java#src#ImportPrompt(result)
+  if choice != ''
+    call vimide#java#src#Import(choice)
   endif
 endfunction
 

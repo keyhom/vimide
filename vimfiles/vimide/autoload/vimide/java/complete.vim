@@ -68,12 +68,6 @@ function! vimide#java#complete#CodeComplete(findstart, base)
     return a:findstart ? -1 : []
   endif
 
-  " current the file location.
-  let file = vimide#util#LegalPath(file)
-
-  " save the file to supply the dirty commit.
-  write
-
   if a:findstart
     " locate the start of the word.
     let line = getline('.')
@@ -84,12 +78,18 @@ function! vimide#java#complete#CodeComplete(findstart, base)
       let start -= 1
     endif
 
-    while start > 0 && line[start - 1] =~ '\W'
-      let start -= 1
-    endwhile
+    " while start > 0 && line[start - 1] =~ '\W'
+    "   let start -= 1
+    " endwhile
 
     return start
   else
+    " current the file location.
+    let file = vimide#util#LegalPath(file)
+
+    " save the file to supply the dirty commit.
+    write
+
     let offset = vimide#util#GetOffset() + len(a:base)
     if '' == file
       return []

@@ -28,10 +28,7 @@ import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,64 +38,52 @@ import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 import org.vimide.eclipse.jdt.service.JavaSourceService;
 
-import com.google.common.base.Strings;
-
 /**
- * Requests to organize imports for the specific source.
+ * Requests to add an import a java source file.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
-@WebServlet(urlPatterns = "/javaOrganizeImports")
-public class OrganizeImportsServlet extends GenericVimideHttpServlet {
+@WebServlet(urlPatterns = "/javaImport")
+public class JavaImportServlet extends GenericVimideHttpServlet {
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LoggerFactory
-            .getLogger(OrganizeImportsServlet.class.getName());
+            .getLogger(JavaImportServlet.class.getName());
 
     @Override
     protected void doGet(VimideHttpServletRequest req,
             VimideHttpServletResponse resp) throws ServletException,
             IOException {
-        // Validating the supplied request parameters.
-        final IProject project = getProject(req);
+        IProject project = getProject(req);
 
         if (null == project || !project.exists()) {
             resp.sendError(403);
             return;
         }
 
-        final File file = getFile(req);
+        File file = getFile(req);
 
-        if (null == file || !file.exists() || file.isDirectory()) {
+        if (null == file || !file.exists()) {
             resp.sendError(403);
             return;
         }
 
         int offset = req.getIntParameter("offset", 0);
-        
+
         if (0 < offset) {
-            // convert the byte offset to char offset.
             offset = new FileObject(file).getCharLength(offset);
         }
-        
-        String typeArgs = req.getParameter("types");
-        String[] types = new String[] {};
 
-        if (!Strings.isNullOrEmpty(typeArgs)) {
-            types = StringUtils.split(typeArgs, ",");
-        }
+        String type = req.getParameter("type");
 
-        // Be sure the project and the file is correct.
         JavaSourceService service = JavaSourceService.getInstance();
-        IPath path = new Path(file.getPath()).makeRelativeTo(project
-                .getLocation());
-        ICompilationUnit src = service.getCompilationUnit(project, path);
+        ICompilationUnit src = service.getCompilationUnit(project, file);
 
         try {
-            Object object = service.organizeImports(src, offset, types);
-            if (null == object)
-                object = 1;
-            resp.writeAsJson(object);
+            Object result = service.importType(src, offset, type);
+            if (null == result)
+                result = 1;
+            resp.writeAsJson(result);
         } catch (final Exception e) {
             LOGGER.error("", e);
             resp.writeAsJson(e.getMessage());
