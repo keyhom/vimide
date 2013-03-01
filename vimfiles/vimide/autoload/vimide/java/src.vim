@@ -47,20 +47,15 @@ let s:command_organize_imports = "/javaOrganizeImports?project=<project>&file=<f
 "   last  - the end line of the src file.
 " ----------------------------------------------------------------------------
 function! vimide#java#src#Format(first, last)
-  let file = expand('%:p')
-  let project = vimide#project#impl#GetProject(file)
+  let project = vimide#project#impl#GetProject()
 
   if '' == project
     return
   endif
 
-  " current the file location.
-  let file = vimide#util#LegalPath(file)
-
-  " save the file to supply the dirty commit.
-  write
-
   " silent updated.
+  let file = vimide#lang#SilentUpdate()
+  
   " get relative file path.
   let command = s:command_java_format
   let command = substitute(command, '<project>', project, '')
@@ -83,18 +78,13 @@ endfunction
 " Comment:
 " ----------------------------------------------------------------------------
 function! vimide#java#src#Comment()
-  let file = expand('%:p')
-  let project = vimide#project#impl#GetProject(file)
+  let project = vimide#project#impl#GetProject()
 
   if '' == project
     return
   endif
 
-  " save the file to supply the dirty commit.
-  write
-
-  " current the file location.
-  let file = vimide#util#LegalPath(file)
+  let file = vimide#lang#SilentUpdate()
   let offset = vimide#util#GetCurrentElementOffset()
 
   " silent updated.
@@ -175,18 +165,13 @@ endfunction
 " OrganizeImports:
 " ----------------------------------------------------------------------------
 function! vimide#java#src#OrganizeImports(...)
-  let file = expand('%:p')
-  let project = vimide#project#impl#GetProject(file)
+  let project = vimide#project#impl#GetProject()
 
   if '' == project
     return
   endif
 
-  " save the file to supply the dirty commit.
-  write
-
-  " current the file location.
-  let file = vimide#util#LegalPath(file)
+  let file = vimide#lang#SilentUpdate()
   let offset = vimide#util#GetCurrentElementOffset()
 
   let command = s:command_organize_imports

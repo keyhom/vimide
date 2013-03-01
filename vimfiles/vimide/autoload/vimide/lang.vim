@@ -77,4 +77,29 @@ function! vimide#lang#UpdateSrcFile(lang, validate)
   endif
 endfunction
 
+" ----------------------------------------------------------------------------
+" Silently updates the current source file w/out validation.
+"
+" SilentUpdate: 
+"   [temp]
+"   [temp_write]
+" ----------------------------------------------------------------------------
+function! vimide#lang#SilentUpdate(...)
+  let pos = getpos('.')
+  let file = expand('%:p')
+  if file != ''
+    try 
+      if a:0 && a:1
+        " don't create temp files if no server if available to clean them up.
+        let project = vimide#project#impl#GetProject(file)
+      elseif a:0 < 2 || a:2
+        silent noautocmd update
+      endif
+    finally
+      call setpos('.', pos)
+    endtry
+  endif
+  return vimide#util#LegalPath(file)
+endfunction
+
 " vim:ft=vim

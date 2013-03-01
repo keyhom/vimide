@@ -167,6 +167,33 @@ function! vimide#util#ToList(args)
 endfunction
 
 " ----------------------------------------------------------------------------
+" Parses the supplied argument line as a options map.
+"
+" ToOption:
+"   args - the supplied argument line.
+" ----------------------------------------------------------------------------
+function! vimide#util#ToOption(args)
+  let list = vimide#util#ToList(a:args)
+  let index = 0
+
+  let key = ''
+  let value = ''
+  let result = {}
+  for l in list
+    if l =~ '^-\w'
+      let key = l
+    else
+      if key != '' " ignore the dirty value.
+        let value = l
+        let result[key] = value
+      endif
+    endif
+  endfor
+
+  return result
+endfunction
+
+" ----------------------------------------------------------------------------
 " Gets the byte offset for the current cursor position or supplied line, col.
 "
 " GetOffset:
@@ -198,6 +225,41 @@ function! vimide#util#GetOffset(...)
 
   let offset += cnum - 1
   return offset
+endfunction
+
+" ----------------------------------------------------------------------------
+" Gets the byte offset for the element under the cursor.
+"
+" GetCurrentElementOffset:
+" ----------------------------------------------------------------------------
+function! vimide#util#GetCurrentElementOffset()
+  let pos = getpos('.')
+  let line = getline('.')
+
+  " cursor not on the word.
+  if line[col('.') - 1] =~ '\W'
+    silent normal! w
+  elseif line[col('.') - 2] =~ '\w' " cursor not at the beginning of the word.
+    silent normal! b
+  endif
+
+  let offset = vimide#util#GetOffset()
+
+  " restore the cursor position.
+  call setpos('.', pos)
+  return offset
+endfunction
+
+" ----------------------------------------------------------------------------
+" Gets the byte offset and length for the element under the cursor.
+"
+" GetCurrentElementPosition:
+" ----------------------------------------------------------------------------
+function! vimide#util#GetCurrentElementPosition()
+  let offset = vimide#util#GetCurrentElementOffset()
+  let word = expand('<cword>')
+
+  return offset . ';' . strlen(word)
 endfunction
 
 " ----------------------------------------------------------------------------

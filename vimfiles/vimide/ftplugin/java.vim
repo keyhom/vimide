@@ -92,4 +92,12 @@ command! -buffer Comment :call vimide#java#src#Comment()
 " OrganizeImports:
 command! -buffer OrganizeImports :call vimide#java#src#OrganizeImports()
 
+" Search:
+command! -buffer -nargs=*
+      \ -complete=customlist,vimide#java#search#CommandCompleteJavaSearch
+      \ Search :call vimide#java#search#SearchAndDisplay('javaSearch', '<args>')
+
+" SearchContext:
+command! -buffer SearchContext :call vimide#java#search#SearchAndDisplay('javaSearch', '')
+
 " vim:ft=vim

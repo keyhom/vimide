@@ -52,9 +52,17 @@ let s:command_project_build = "/project_build?type=<type>" " /project_build?type
 " GetProject:
 "   path  - the specific path located in the target project.
 " ----------------------------------------------------------------------------
-function! vimide#project#impl#GetProject(path)
-  if a:path != ''
-    let path = vimide#util#LegalPath(a:path)
+function! vimide#project#impl#GetProject(...)
+  let path = ''
+  if a:0 > 0 
+    let path = a:1
+  endif
+
+  if path == ''
+    let path = expand('%:p')
+  endif
+  if path != ''
+    let path = vimide#util#LegalPath(path)
     let command = substitute(s:command_project_by_resource, '<file>', path, '')
     let result = vimide#Execute(command)
     if string(result) != ''

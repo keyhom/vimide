@@ -28,6 +28,7 @@ import org.vimide.core.server.VimideHttpServer;
 import org.vimide.eclipse.core.VimidePlugin;
 import org.vimide.eclipse.jdt.servlet.CodeCompleteServlet;
 import org.vimide.eclipse.jdt.servlet.JVMListServlet;
+import org.vimide.eclipse.jdt.servlet.JavaSearchServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaDocCommentServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaFormatServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaImportServlet;
@@ -54,6 +55,7 @@ public class VimideJdtPlugin extends VimidePlugin {
         VimideHttpServer.getInstance().registerServlet(
                 OrganizeImportsServlet.class);
         VimideHttpServer.getInstance().registerServlet(JavaImportServlet.class);
+        VimideHttpServer.getInstance().registerServlet(JavaSearchServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 JavaDocCommentServlet.class);
         VimideHttpServer.getInstance().registerServlet(

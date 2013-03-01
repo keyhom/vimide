@@ -103,6 +103,14 @@ if !exists('g:VIdeValidateSortResults')
   let g:VIdeValidateSortResults = 'occurrence'
 endif
 
+if !exists('g:VIdeDefaultFileOpenAction')
+  let g:VIdeDefaultFileOpenAction = 'split'
+endif
+
+if !exists('g:VIdeLocationListHeight')
+  let g:VIdeLocationListHeight = 10
+endif
+
 " ----------------------------------------------------------------------------
 "
 " Command Declartions:
