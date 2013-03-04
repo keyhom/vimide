@@ -386,6 +386,90 @@ function! s:ParseLocationEntry(entry) " {{{
 endfunction "}}}
 
 " ----------------------------------------------------------------------------
+" Sets the contents of the location list for the current window.
+"
+" SetLocationList:
+"   list      - the list of location.
+"   [action]  - the action.
+" ----------------------------------------------------------------------------
+function! vimide#util#SetLocationList(list, ...)
+  let loclist = a:list
+
+  " filter the list if the current buffer defines a list of filters.
+  if exists('b:VIdeLocationListFilter')
+    let newlist = []
+    for item in loclist
+      let addit = 1
+
+      for filter in b:VIdeLocationListFilter
+        if item.text =~ filter
+          let addit = 0
+          break
+        endif
+      endfor
+
+      if addit
+        call add(newlist, item)
+      endif
+    endfor
+    let loclist = newlist
+  endif
+
+  if a:0 == 0
+    call setloclist(0, loclist)
+  else
+    call setloclist(0, loclist, a:1)
+  endif
+
+  let project = vimide#project#impl#GetProject()
+  if '' != project
+    for item in getloclist(0)
+      call setbufvar(item.bufnr, 'vimide_project', project)
+    endfor
+  endif
+
+  if len(qflist) > 0
+    " delayed to call the 'ShowCurrentError()'
+  endif
+
+  " Update the problem signs.
+  call vimide#display#signs#Update()
+endfunction
+
+" ----------------------------------------------------------------------------
+" Clears the current location list. Optionally 'namespace' arguments can be
+" supplied which will only clear items with text prefixed with '[namespace]'.
+" Also the specifial namespace 'global' may be supplied which will only remove
+" items with no namespace prefix.
+" ----------------------------------------------------------------------------
+function! vimide#util#ClearLocationList(...)
+  if a:0 > 0
+    let loclist = getloclist(0)
+    if len(loclist) > 0
+      let pattern = ''
+      for ns in a:000
+        if pattern != ''
+          let pattern .= '\|'
+        endif
+        if ns == 'global'
+          let pattern .= '\(\[\w\+\]\)\@!'
+        else
+          let pattern .= '\[' . ns . '\]'
+        endif
+      endfor
+
+      let pattern = '^\(' . pattern . '\)'
+
+      call filter(loclist, 'v:val.text !~ pattern')
+      call setloclist(0, loclist, 'r')
+    endif
+  else
+    call setloclist(0, [], 'r')
+  endif
+  call vimide#display#signs#Update()
+endfunction
+
+" ----------------------------------------------------------------------------
 " Sets the contents of the quickfix list.
 "
 " SetQuickfixList:
@@ -529,6 +613,26 @@ function! vimide#util#PromptList(prompt, list, ...)
   endif
 
   return response
+endfunction
+
+" ----------------------------------------------------------------------------
+" Gives focus to the window containing the buffer for the supplied file, or if
+" none, opens the file using the supplied command.
+"
+" GoToBufferWindowOrOpen:
+"   name  - 
+"   cmd   -
+" ----------------------------------------------------------------------------
+function! vimide#util#GoToBufferWindowOrOpen(name, cmd)
+  let name = vimide#util#EscapeBufferName(a:name)
+  let winnr = bufwinnr(bufnr('^' . name . '$'))
+
+  if winnr != -1
+    exec winnr . 'winc w'
+    " call vimide#util#DelayedCommand('doautocmd WinEnter')
+  else
+    let cmd = a:cmd
+  endif
 endfunction
 
 " vim:ft=vim
