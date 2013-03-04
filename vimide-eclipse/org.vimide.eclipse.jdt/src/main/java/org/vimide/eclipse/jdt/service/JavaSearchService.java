@@ -34,7 +34,6 @@ import org.apache.commons.vfs.FileSystemManager;
 import org.apache.commons.vfs.VFS;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -281,67 +280,59 @@ public class JavaSearchService extends JavaBaseService {
                 resource = root.getResource();
                 if (null != resource) {
                     if (IResource.PROJECT == resource.getType()) {
-                        project = (IProject) resource;
-                        path = project.getRawLocation();
-                        // eclipse returns will for raw location if project is
-                        // under the workspace.
-                        if (null == path) {
-                            String name = project.getName();
-                            path = ResourcesPlugin.getWorkspace().getRoot()
-                                    .getRawLocation();
-                            path = path.append(name);
-                        }
+                        path = getIPath((IProject) resource);
                     } else {
                         path = resource.getLocation();
                     }
+                } else {
+                    path = root.getPath();
+                }
 
-                    String classFile = elementName.replace('.',
-                            File.separatorChar);
+                String classFile = elementName.replace('.', File.separatorChar);
 
-                    if (isJarArchive(path)) {
-                        file = "jar:file://" + path.toOSString() + "!"
-                                + classFile + ".class";
+                if (isJarArchive(path)) {
+                    file = "jar:file://" + path.toOSString() + "!/" + classFile
+                            + ".class";
+                } else {
+                    file = path.toOSString() + "/" + classFile + ".class";
+                }
+
+                // android injects its jdk classes, so filter those out if
+                // the project doesn't have the android nature.
+                // TODO: filter by the android nature.
+
+                // if a source path attachment exists, use it.
+                IPath srcPath = root.getSourceAttachmentPath();
+                if (null != srcPath) {
+                    String rootPath;
+                    IProject elementProject = root.getJavaProject()
+                            .getProject();
+
+                    // determines if src path is project relative or file
+                    // system absolute.
+                    if (srcPath.isAbsolute()
+                            && elementProject.getName().equals(
+                                    srcPath.segment(0))) {
+                        rootPath = getFilePath(elementProject,
+                                srcPath.toString());
                     } else {
-                        file = path.toOSString() + "/" + classFile + ".class";
+                        rootPath = srcPath.toOSString();
                     }
 
-                    // android injects its jdk classes, so filter those out if
-                    // the project doesn't have the android nature.
-                    // TODO: filter by the android nature.
+                    String srcFile = toUrl(rootPath + File.separator
+                            + classFile + ".java");
 
-                    // if a source path attachment exists, use it.
-                    IPath srcPath = root.getSourceAttachmentPath();
-                    if (null != srcPath) {
-                        String rootPath;
-                        IProject elementProject = root.getJavaProject()
-                                .getProject();
-
-                        // determines if src path is project relative or file
-                        // system absolute.
-                        if (srcPath.isAbsolute()
-                                && elementProject.getName().equals(
-                                        srcPath.segment(0))) {
-                            rootPath = getFilePath(elementProject,
-                                    srcPath.toString());
-                        } else {
-                            rootPath = srcPath.toOSString();
-                        }
-
-                        String srcFile = toUrl(rootPath + File.separator
-                                + classFile + ".java");
-
-                        // see if source file exists at source file.
-                        FileSystemManager fsManager = VFS.getManager();
-                        FileObject fileObject = fsManager.resolveFile(srcFile);
+                    // see if source file exists at source file.
+                    FileSystemManager fsManager = VFS.getManager();
+                    FileObject fileObject = fsManager.resolveFile(srcFile);
+                    if (fileObject.exists()) {
+                        file = srcFile;
+                    } else if (Os.isFamily(Os.FAMILY_MAC)) {
+                        srcFile = toUrl(rootPath + File.separator + "src"
+                                + File.separator + classFile + ".java");
+                        fileObject = fsManager.resolveFile(srcFile);
                         if (fileObject.exists()) {
                             file = srcFile;
-                        } else if (Os.isFamily(Os.FAMILY_MAC)) {
-                            srcFile = toUrl(rootPath + File.separator + "src"
-                                    + File.separator + classFile + ".java");
-                            fileObject = fsManager.resolveFile(srcFile);
-                            if (fileObject.exists()) {
-                                file = srcFile;
-                            }
                         }
                     }
                 }

@@ -23,8 +23,13 @@
 package org.vimide.core.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -44,7 +49,33 @@ public class Position implements Serializable {
         int column = 1;
 
         try {
-            int[] pos = new FileObject(new File(fileName))
+            File file = new File(fileName);
+            URL fileUrl = null;
+            InputStream stream = null;
+            
+            if (!file.exists()) {
+                if (0 < file.getAbsolutePath().indexOf('!')) {
+                    // URL ?
+                    try {
+                        fileUrl = new URL(fileName);
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            
+            if (null != fileUrl) {
+                try {
+                    stream = fileUrl.openStream();
+                } catch (IOException e) {
+                }
+            }
+            
+            if (null == stream) {
+                stream = new FileInputStream(file);
+            }
+            
+            int[] pos = new FileObject(stream)
                     .getLineColumn(offset);
             if (null != pos) {
                 line = pos[0];

@@ -472,31 +472,6 @@ function! vimide#util#ClearQuickfixList(...)
 endfunction
 
 " ----------------------------------------------------------------------------
-" Gets the byte offset for the element under the cursor.
-"
-" GetCurrentElementOffset:
-" ----------------------------------------------------------------------------
-function! vimide#util#GetCurrentElementOffset()
-  let pos = getpos('.')
-
-  let line = getline('.')
-  " cursor not on the word.
-  if line[col('.') - 1] =~ '\W'
-    silent normal! w
-  " cursor not at the beginning of the word
-  elseif line[col('.') - 2] =~ '\W'
-    silent normal! b
-  endif
-
-  let offset = vimide#util#GetOffset()
-
-  " restore the cursor position.
-  call setpos('.', pos)
-
-  return offset
-endfunction
-
-" ----------------------------------------------------------------------------
 " Creates a prompt for the user using the supplied prompt string and list of
 " items to choose from. Returns -1 if the list is empty or if the user
 " canceled, and 0 if the list contains only on item.

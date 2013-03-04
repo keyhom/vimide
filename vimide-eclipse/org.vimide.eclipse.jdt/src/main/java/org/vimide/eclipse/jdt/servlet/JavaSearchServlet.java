@@ -90,10 +90,10 @@ public class JavaSearchServlet extends GenericVimideHttpServlet {
             offset = new FileObject(file).getCharLength(offset);
         }
 
-        // recieves other parameters.
+        // receives other parameters.
         String scope = req.getNotNullParameter("scope");
         int length = req.getIntParameter("length");
-        int type = req.getIntParameter("type");
+        String type = req.getNotNullParameter("type");
         boolean caseSensitive = req.getIntParameter("caseSensitive", 1) != 0 ? true
                 : false;
         String pattern = req.getNotNullParameter("pattern");
@@ -102,7 +102,7 @@ public class JavaSearchServlet extends GenericVimideHttpServlet {
         final ICompilationUnit src = service.getCompilationUnit(project, file);
         try {
             List<SearchMatch> matches = service.collectMatches(src, offset,
-                    length, caseSensitive, type, scope, pattern);
+                    length, caseSensitive, service.getType(type), scope, pattern);
 
             List<Position> results = Lists.newArrayList();
             for (SearchMatch match : matches) {

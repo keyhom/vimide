@@ -47,7 +47,7 @@ endif
 let s:command_search_src = "javaSearch"
 let s:command_search_doc = "javaDocSearch"
 
-let s:search_element = "<search>?project=<project>&file=<file>&offset=<offset>&length=<length>&<args>"
+let s:search_element = "<search>?project=<project>&file=<file>&offset=<offset>&length=<length>"
 let s:search_pattern = "<search>"
 let s:options = ['-p', '-t', '-x', '-s', '-i']
 let s:contexts = ['all', 'declarations', 'implementors', 'references']
@@ -107,9 +107,52 @@ function! s:Search(command, ...)
 
   let in_project = vimide#project#impl#IsCurrentFileInProject()
   let project = vimide#project#impl#GetProject()
+  let file = vimide#util#LegalPath(expand('%:p'))
+  let pattern = ''
+  let type = ''
+  let caseSensitive = !&ignorecase
+  let scope =  ''
+  let offset = 0
+  let length = 0
+  let context = ''
+  let other = ''
+
+  " get pattern
+  if has_key(cmdOptions, '-p')
+    let pattern = cmdOptions['-p']
+  endif
+
+  " get type
+  if has_key(cmdOptions, '-t')
+    let type = cmdOptions['-t']
+  endif
+
+  " get caseSensitive
+  if has_key(cmdOptions, '-i')
+    let caseSensitive = 1
+  endif
+
+  " get scope
+  if has_key(cmdOptions, '-s')
+    let scope = cmdOptions['-s']
+  endif
+
+  " get context
+  if has_key(cmdOptions, 'x')
+    let context = cmdOptions['-x']
+  endif
+
+  let other = "type=" . type . 
+        \ "&scope=" . scope . 
+        \ "&caseSensitive=" . caseSensitive . 
+        \ "&context=" . context . 
+        \ "&pattern=" . pattern
+
+  let patternSearch = 0
 
   " element search
   if argline !~ '-p\>'
+    let patternSearch = 0
     if &ft != 'java'
       call vimide#print#EchoWarning("Element searches only supported in java search files.")
       return 0
@@ -128,37 +171,22 @@ function! s:Search(command, ...)
     let position = vimide#util#GetCurrentElementPosition()
     let offset = substitute(position, '\(.*\);\(.*\)', '\1', '')
     let length = substitute(position, '\(.*\);\(.*\)', '\2', '')
-
-    let search_cmd = s:params_search_element
-    let search_cmd = substitute(search_cmd, '<search>', a:command, '')
-    let search_cmd = substitute(search_cmd, '<project>', project, '')
-    let search_cmd = substitute(search_cmd, '<file>', file, '')
-    let search_cmd = substitute(search_cmd, '<offset>', offset, '')
-    let search_cmd = substitute(search_cmd, '<length>', length, '')
-    let search_cmd = substitute(search_cmd, '<args>', argline, '')
-
-    let result = vimide#Execute(search_cmd)
   else 
     " Pattern search
-    let search_cmd = s:search_pattern
-    let search_cmd = substitute(search_cmd, '<search>', a:command, '')
-    " the http url
-    let search_cmd .= '?' 
+    let patternSearch = 1
+  endif
 
-    if '' != project
-      let search_cmd .= 'project=' . project 
-    endif
+  let search_cmd = s:search_element
+  let search_cmd = substitute(search_cmd, '<search>', a:command, '')
+  let search_cmd = substitute(search_cmd, '<project>', project, '')
+  let search_cmd = substitute(search_cmd, '<file>', file, '')
+  let search_cmd = substitute(search_cmd, '<offset>', offset, '')
+  let search_cmd = substitute(search_cmd, '<length>', length, '')
+  let search_cmd .= '&' . other
 
-    if '' != file
-      let search_cmd .= '&file=' . file
-    endif
+  let result = vimide#Execute(search_cmd)
 
-    let search_cmd .= argline
-    " quote the search pattern.
-    let search_cmd = substitute(search_cmd, '\(.*-p\s\+\)\(.\{-}\)\(\s\|$\)\(.*\)', '\1"\2"\3\4', '')
-
-    let result = vimide#Execute(search_cmd)
-
+  if patternSearch
     if !in_project && filereadable(expand('%'))
       return result + s:SearchAlternative(argline, 0)
     endif

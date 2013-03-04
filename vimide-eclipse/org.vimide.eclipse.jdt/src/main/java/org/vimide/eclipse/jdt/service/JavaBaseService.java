@@ -41,6 +41,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
 
 /**
  * The basic service for the java functionally service.
@@ -49,10 +50,32 @@ import org.eclipse.jdt.core.Signature;
  */
 public class JavaBaseService {
 
-    public static final String JAR_PREFIX = "jar://";
-    public static final String ZIP_PREFIX = "zip://";
+    public static final String JAR_PREFIX = "jar:file://";
+    public static final String ZIP_PREFIX = "zip:file://";
     public static final String JAR_EXT = ".jar";
     public static final String ZIP_EXT = ".zip";
+
+    public static final String CONTEXT_ALL = "all";
+    public static final String CONTEXT_DECLARATIONS = "declarations";
+    public static final String CONTEXT_IMPLEMENTORS = "implementors";
+    public static final String CONTEXT_REFERENCES = "references";
+
+    public static final String SCOPE_ALL = "all";
+    public static final String SCOPE_PROJECT = "project";
+    public static final String SCOPE_TYPE = "type";
+
+    public static final String TYPE_ALL = "all";
+    public static final String TYPE_ANNOTATION = "annotation";
+    public static final String TYPE_CLASS = "class";
+    public static final String TYPE_CLASS_OR_ENUM = "classOrEnum";
+    public static final String TYPE_CLASS_OR_INTERFACE = "classOrInterface";
+    public static final String TYPE_CONSTRUCTOR = "constructor";
+    public static final String TYPE_ENUM = "enum";
+    public static final String TYPE_FIELD = "field";
+    public static final String TYPE_INTERFACE = "interface";
+    public static final String TYPE_METHOD = "method";
+    public static final String TYPE_PACKAGE = "package";
+    public static final String TYPE_TYPE = "type";
 
     /**
      * Gets the compilation unit by the supplied project and file.
@@ -393,5 +416,36 @@ public class JavaBaseService {
     protected boolean isJarArchive(IPath path) {
         String ext = path.getFileExtension();
         return null != ext && ext.toLowerCase().matches("^(jar|zip)$");
+    }
+
+    /**
+     * Translates the string type to the int equivalent.
+     * 
+     * @param type the type string.
+     * @return the int type.
+     */
+    public int getType(String type) {
+        if (TYPE_ANNOTATION.equals(type)) {
+            return IJavaSearchConstants.ANNOTATION_TYPE;
+        } else if (TYPE_CLASS.equals(type)) {
+            return IJavaSearchConstants.CLASS;
+        } else if (TYPE_CLASS_OR_ENUM.equals(type)) {
+            return IJavaSearchConstants.CLASS_AND_ENUM;
+        } else if (TYPE_CLASS_OR_INTERFACE.equals(type)) {
+            return IJavaSearchConstants.CLASS_AND_INTERFACE;
+        } else if (TYPE_CONSTRUCTOR.equals(type)) {
+            return IJavaSearchConstants.CONSTRUCTOR;
+        } else if (TYPE_ENUM.equals(type)) {
+            return IJavaSearchConstants.ENUM;
+        } else if (TYPE_INTERFACE.equals(type)) {
+            return IJavaSearchConstants.INTERFACE;
+        } else if (TYPE_FIELD.equals(type)) {
+            return IJavaSearchConstants.FIELD;
+        } else if (TYPE_METHOD.equals(type)) {
+            return IJavaSearchConstants.METHOD;
+        } else if (TYPE_PACKAGE.equals(type)) {
+            return IJavaSearchConstants.PACKAGE;
+        }
+        return IJavaSearchConstants.TYPE;
     }
 }
