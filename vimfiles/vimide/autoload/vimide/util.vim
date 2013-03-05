@@ -67,6 +67,23 @@ function! vimide#util#LegalPath(path, ...)
 endfunction
 
 " ----------------------------------------------------------------------------
+" Escapes the supplied buffer name so that it can be safely used by buf*
+" functions.
+"
+" EscapeBufferName:
+"   name - the name of the buffer.
+" ----------------------------------------------------------------------------
+function! vimide#util#EscapeBufferName(name)
+  let name = a:name
+  " escaping the space in cygwin could lead to the dos path error message that
+  " cygwin throws when a dos path is referenced.
+  if !has('win32unix')
+    let name = escape(a:name, ' ')
+  endif
+  return substitute(name, '\(.\{-}\)\[\(.\{-}\)\]\(.\{-}\)', '\1[[]\2[]]\3', 'g')
+endfunction
+
+" ----------------------------------------------------------------------------
 " Execute a command without the specific autocommands.
 "
 " ExecWithoutAutocmds:
@@ -504,7 +521,7 @@ function! vimide#util#SetQuickfixList(list, ...)
     call setqflist(qflist, a:1)
   endif
 
-  let projectName = vimide#project#impl#GetProject(expand('%:p'))
+  let projectName = vimide#project#impl#GetProject()
   if projectName != ''
     for item in getqflist()
       call setbufvar(item.bufnr, 'vimide_project', projectName)
@@ -616,6 +633,29 @@ function! vimide#util#PromptList(prompt, list, ...)
 endfunction
 
 " ----------------------------------------------------------------------------
+" Focuses the window containing the supplied buffer name or buffer number.
+" Returns 1 if the window was found, 0 otherwise.
+"
+" GoToBufferWindow:
+"   buf - the buffer.
+" ----------------------------------------------------------------------------
+function! vimide#util#GoToBufferWindow(buf)
+  if type(a:buf) == g:NUMBER_TYPE
+    let winnr = bufwinnr(a:buf)
+  else
+    let name = vimide#util#EscapeBufferName(a:buf)
+    let winnr = bufwinnr(bufnr('^' . name . '$'))
+  endif
+
+  if winnr != -1
+    exec winnr . 'winc w'
+    " call vimide#util#DelayedCommand('doautocmd WinEnter')
+    return 1
+  endif
+  return 0
+endfunction
+
+" ----------------------------------------------------------------------------
 " Gives focus to the window containing the buffer for the supplied file, or if
 " none, opens the file using the supplied command.
 "
@@ -632,7 +672,27 @@ function! vimide#util#GoToBufferWindowOrOpen(name, cmd)
     " call vimide#util#DelayedCommand('doautocmd WinEnter')
   else
     let cmd = a:cmd
+    " if splitting and the buffer is a unamed empty buffer, then switch to an
+    " edit.
+    if cmd == 'split' && expand('%') == '' && 
+          \ !&modified && line('$') == 1 && getline(1) == ''
+      let cmd = 'edit'
+    endif
+    silent exec cmd . ' ' . escape(vimide#util#Simplify(a:name), ' ')
   endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Registers the autocmd for returning the user to the supplied buffer when the
+" current buffer is closed.
+"
+" GoToBufferWindowRegister:
+"   buf - the buffer.
+" ----------------------------------------------------------------------------
+function! vimide#util#GoToBufferWindowRegister(buf)
+  exec 'autocmd BufWinLeave <buffer> ' . 
+        \ 'call vimide#util#GoToBufferWindow("' . escape(a:buf, '\') . '") | ' .
+        \ 'doautocmd BufEnter'
 endfunction
 
 " vim:ft=vim

@@ -92,7 +92,7 @@ public class Position implements Serializable {
         return new Position(fileName, message, 0, 0, line, column);
     }
 
-    private String fileName;
+    private String filename;
     private int offset = 0;
     private int length = 0;
     private int line = 1;
@@ -101,7 +101,7 @@ public class Position implements Serializable {
 
     private Position(String filename, String message, int offset, int length,
             int line, int column) {
-        this.fileName = filename;
+        this.filename = filename;
         this.message = null != message ? message : StringUtils.EMPTY;
         this.offset = offset;
         this.line = line;
@@ -120,10 +120,10 @@ public class Position implements Serializable {
     /**
      * Gets the value of fileName property.
      * 
-     * @return the fileName
+     * @return the filename 
      */
     public String getFileName() {
-        return fileName;
+        return filename;
     }
 
     /**
@@ -185,7 +185,7 @@ public class Position implements Serializable {
         if (this == obj)
             return true;
         Position rhs = (Position) obj;
-        return new EqualsBuilder().append(fileName, rhs.fileName)
+        return new EqualsBuilder().append(filename, rhs.filename)
                 .append(offset, rhs.offset).append(length, rhs.length)
                 .append(line, rhs.line).append(column, rhs.column).isEquals();
     }

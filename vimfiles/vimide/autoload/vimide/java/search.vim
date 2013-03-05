@@ -221,7 +221,7 @@ function! vimide#java#search#SearchAndDisplay(type, args)
   endif
 
   if !empty(results) 
-    if a:type == 'java_search'
+    if a:type == 'javaSearch'
       call vimide#util#SetLocationList(vimide#util#AssembleLocationEntries(results))
       let docs = getloclist(0)
       " if only one result and it's for the current file, just jump to it.
@@ -234,7 +234,43 @@ function! vimide#java#search#SearchAndDisplay(type, args)
         " single result in another file.
         let entry = getloclist(0)[0]
         let name = substitute(bufname(entry.bufnr), '\', '/', 'g')
+        call vimide#util#GoToBufferWindowOrOpen(name, g:VIdeJavaSearchSingleResult)
+        call vimide#util#SetLocationList(vimide#util#AssembleLocationEntries(results))
+        call vimide#display#signs#Update()
+        call cursor(entry.lnum, entry.col)
+      else
+        exec 'lopen' . g:VIdeLocationListHeight
       endif
+    elseif a:type == 'javaDocSearch'
+      let window_name = 'javaDocSearchResults'
+      let filename = expand('%:p')
+      call vimide#util#TempWindowClear(window_name)
+
+      if len(results) == 1 && g:VIdeJavaDocSearchSingleResult == 'open'
+        let entry = results[0]
+        call s:ViewDoc(entry)
+      else
+        call vimide#util#TempWindow(window_name, results, {'height': g:VIdeLocationListHeight})
+
+        nnoremap <silent> <buffer> <cr> :call <SID>ViewDoc()<cr>
+        augroup temp_window
+          autocmd! BufWinLeave <buffer>
+          call vimide#util#GoToBufferWindowRegister(filename)
+        augroup END
+      endif
+    endif
+    return 1
+  else
+    if argline =~ '-p '
+      let searchedFor = substitute(argline, '.*-p \(.\{-}\)\( .*\|$\)', '\1', '')
+      call vimide#print#EchoInfo("Pattern '" . searchedFor . "' not found.")
+    elseif &ft == 'java'
+      if !vimide#java#util#IsValidIdentifier(expand('<cword>'))
+        return
+      endif
+
+      let searchedFor = expand('<cword>')
+      call vimide#print#EchoInfo("No results for '" . searchedFor "'.")
     endif
   endif
 endfunction
