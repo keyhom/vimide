@@ -223,7 +223,7 @@ function! vimide#java#search#SearchAndDisplay(type, args)
   if !empty(results) 
     if a:type == 'javaSearch'
       call vimide#util#SetLocationList(vimide#util#AssembleLocationEntries(results))
-      let docs = getloclist(0)
+      let locs = getloclist(0)
       " if only one result and it's for the current file, just jump to it.
       " note: on windows the expand result must be escaped.
       if len(results) == 1 && locs[0].bufnr == bufnr('%')

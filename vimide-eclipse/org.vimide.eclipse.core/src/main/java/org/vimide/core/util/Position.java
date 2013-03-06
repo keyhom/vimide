@@ -122,7 +122,7 @@ public class Position implements Serializable {
      * 
      * @return the filename 
      */
-    public String getFileName() {
+    public String getFilename() {
         return filename;
     }
 
@@ -158,7 +158,7 @@ public class Position implements Serializable {
      * 
      * @return the column
      */
-    public int getColumn() {
+    public int getCol() {
         return column;
     }
 

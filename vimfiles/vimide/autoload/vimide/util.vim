@@ -387,7 +387,10 @@ function! s:ParseLocationEntry(entry) " {{{
     let line = entry.line
     let col = entry.col
     let message = entry.message
-    let type = entry.severity == 2 ? 'e' : 'w'
+    let type = ''
+    if has_key(entry, 'severity')
+      let type = entry.severity == 2 ? 'e' : 'w'
+    endif
   endif
 
   let file = vimide#util#LegalPath(file, 1)
@@ -445,7 +448,7 @@ function! vimide#util#SetLocationList(list, ...)
     endfor
   endif
 
-  if len(qflist) > 0
+  if len(loclist) > 0
     " delayed to call the 'ShowCurrentError()'
   endif
 
@@ -630,6 +633,34 @@ function! vimide#util#PromptList(prompt, list, ...)
   endif
 
   return response
+endfunction
+
+" ----------------------------------------------------------------------------
+" Simply the supplied file to the shortest valid name.
+"
+" Simplify:
+"   file - the file.
+" ----------------------------------------------------------------------------
+function! vimide#util#Simplify(file)
+  let file = a:file
+  
+  " don't run simplify on url files, it will screw them up.
+  if file !~ '://'
+    let file = simplify(file)
+  endif
+
+  " replace all '\' chars wich '/' except those escaping spaces.
+  let file = substitute(file, '\\\([^[:space:]]\)', '/\1', 'g')
+  let cwd = substitute(getcwd(), '\', '/', 'g')
+  if cwd !~ '/$'
+    let cwd .= '/'
+  endif
+
+  if file =~ '^' . cwd
+    let file = substitute(file, '^' . cwd, '', '')
+  endif
+
+  return file
 endfunction
 
 " ----------------------------------------------------------------------------

@@ -279,8 +279,8 @@ endfunction
 "
 " IsCurrentFileInProject:
 " ----------------------------------------------------------------------------
-function! vimide#project#impl#IsCurrentFileInProject()
-  let project = vimide#project#impl#GetProject(expand('%:p'))
+function! vimide#project#impl#IsCurrentFileInProject(...)
+  let project = vimide#project#impl#GetProject()
   return project == '' ? 0 : 1
 endfunction
 

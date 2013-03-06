@@ -56,7 +56,7 @@ public class JavaSearchServlet extends GenericVimideHttpServlet {
     private static final long serialVersionUID = 1L;
 
     /**
-     * LOGGER.
+     * LOGGER
      */
     private static final Logger log = LoggerFactory
             .getLogger(JavaSearchServlet.class.getName());
@@ -102,7 +102,8 @@ public class JavaSearchServlet extends GenericVimideHttpServlet {
         final ICompilationUnit src = service.getCompilationUnit(project, file);
         try {
             List<SearchMatch> matches = service.collectMatches(src, offset,
-                    length, caseSensitive, service.getType(type), scope, pattern);
+                    length, caseSensitive, service.getType(type), scope,
+                    pattern);
 
             List<Position> results = Lists.newArrayList();
             for (SearchMatch match : matches) {

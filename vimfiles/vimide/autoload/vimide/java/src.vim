@@ -191,7 +191,7 @@ function! vimide#java#src#OrganizeImports(...)
   endif
 
   if type(result) == g:DICT_TYPE
-    call vimide#util#Reload({'pos' : [result.line, result.column]})
+    call vimide#util#Reload({'pos' : [result.line, result.col]})
     call vimide#lang#UpdateSrcFile('java', 1)
     return
   endif
