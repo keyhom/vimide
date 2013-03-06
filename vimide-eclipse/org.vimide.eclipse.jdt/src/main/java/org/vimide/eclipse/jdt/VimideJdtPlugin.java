@@ -42,8 +42,14 @@ import org.vimide.eclipse.jdt.servlet.source.OrganizeImportsServlet;
  */
 public class VimideJdtPlugin extends VimidePlugin {
 
+    /**
+     * ID of the {@link VimideJdtPlugin}.
+     */
     public static final String PLUGIN_ID = "org.vimide.eclipse.jdt";
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void activate(BundleContext context) {
         super.activate(context);
@@ -61,5 +67,7 @@ public class VimideJdtPlugin extends VimidePlugin {
         VimideHttpServer.getInstance().registerServlet(
                 CodeCompleteServlet.class);
     }
-
 }
+
+// vim:ft=java
+

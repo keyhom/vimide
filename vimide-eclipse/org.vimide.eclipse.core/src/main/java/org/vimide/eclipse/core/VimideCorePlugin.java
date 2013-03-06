@@ -55,8 +55,8 @@ public class VimideCorePlugin extends VimidePlugin {
     /**
      * Logger
      */
-    static final Logger LOGGER = LoggerFactory
-            .getLogger(VimideCorePlugin.class);
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(VimideCorePlugin.class.getName());
 
     /**
      * {@inheritDoc}
@@ -96,7 +96,8 @@ public class VimideCorePlugin extends VimidePlugin {
                 .registerServlet(ProjectInfoServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 ProjectImportServlet.class);
-        VimideHttpServer.getInstance().registerServlet(ProjectBuildServlet.class);
+        VimideHttpServer.getInstance().registerServlet(
+                ProjectBuildServlet.class);
         VimideHttpServer.getInstance().registerServlet(ProjectsServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 ProjectByResourceServlet.class);
@@ -108,10 +109,13 @@ public class VimideCorePlugin extends VimidePlugin {
                 ProjectRefreshServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 ProjectRefreshFileServlet.class);
-        VimideHttpServer.getInstance().registerServlet(ProjectDeleteServlet.class);
-        VimideHttpServer.getInstance().registerServlet(ProjectNamesServlet.class);
+        VimideHttpServer.getInstance().registerServlet(
+                ProjectDeleteServlet.class);
+        VimideHttpServer.getInstance().registerServlet(
+                ProjectNamesServlet.class);
         VimideHttpServer.getInstance().registerServlet(TestServlet.class);
-        VimideHttpServer.getInstance().registerServlet(ProblemListServlet.class);
+        VimideHttpServer.getInstance()
+                .registerServlet(ProblemListServlet.class);
     }
 
 }

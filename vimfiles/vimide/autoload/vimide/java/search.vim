@@ -65,11 +65,46 @@ let s:types = [
       \ 'package',
       \ 'type']
 
+let s:search_alt_all = '\<<element>\>'
+let s:search_alt_references = s:search_alt_all
+let s:search_alt_implementors = 
+      \ '\(implements\|extends\)\_[0-9A-Za-z,[:space:]]*\<<element>\>\_[0-9A-Za-z,[:space:]]*{'
+
 " ----------------------------------------------------------------------------
 "
 " Script Functions:
 "
 " ----------------------------------------------------------------------------
+
+" ----------------------------------------------------------------------------
+" Builds a pattern based on the cursors current position in the file.
+"
+" BuildPattern:
+" ----------------------------------------------------------------------------
+function! s:BuildPattern()
+  let class = expand('<cword>')
+  " see if the classname element selected is fully qualified.
+  let line = getline('.')
+  let package = substitute(line, '.*\s\([0-9A-Za-z._]*\)\.' . class . '\>.*', '\1', '')
+
+  " not fully qualified, so attempt to determine package from import.
+  if package == line
+    let package = vimide#java#util#GetPackageFromImport(class)
+
+    " maybe the element is the current class?
+    if package == ''
+      if vimide#java#util#GetClassname() == class
+        let package = vimide#java#util#GetPackage()
+      endif
+    endif
+  endif
+
+  if package != ''
+    return package . '.' . class
+  endif
+
+  return class
+endfunction
 
 " ----------------------------------------------------------------------------
 " Executes a search session.
@@ -165,7 +200,7 @@ function! s:Search(command, ...)
 
     if !in_project
       " build a pattern search and execute it.
-      return s:SearchAlternative('-p ' . s:BuildPattern() . ' ' . argline, 1)
+      return s:SearchAlternate('-p ' . s:BuildPattern() . ' ' . argline, 1)
     endif
 
     let position = vimide#util#GetCurrentElementPosition()
@@ -188,11 +223,116 @@ function! s:Search(command, ...)
 
   if patternSearch
     if !in_project && filereadable(expand('%'))
-      return result + s:SearchAlternative(argline, 0)
+      return result + s:SearchAlternate(argline, 0)
     endif
   endif
 
   return result
+endfunction
+
+" ----------------------------------------------------------------------------
+" Alternate search for non-project src files using vimgrep and $path.
+"
+" SearchAlternate:
+"   argline - 
+"   element -
+" ----------------------------------------------------------------------------
+function! s:SearchAlternate(argline, element)
+  call vimide#print#EchoInfo("Executing alternate search...")
+  if a:argline =~ '-t'
+    call vimide#print#EchoError("Alternate search doesn't support the type (-t) option yet.")
+    return []
+  endif
+
+  let search_pattern = ""
+  if a:argline =~ '-x all'
+    let search_pattern = s:search_alt_all
+  elseif a:argline =~ '-x implementors'
+    let search_pattern = s:search_alt_implementors
+  elseif a:argline =~ '-x references'
+    let search_pattern = s:search_alt_references
+  endif
+
+  let pattern = substitute(a:argline, '.*-p\s\+\(.\{-}\)\(\s.*\|$\)', '\1', '')
+  let file_pattern = substitute(pattern, '\.', '/', 'g') . '.java'
+
+  " search relative to the current dir first.
+  let package_path = substitute(vimide#java#util#GetPackage(), '\.', '/', 'g')
+  let path = substitute(expand('%:p:h'), '\', '/', 'g')
+  let path = substitute(path, package_path, '', '')
+  let files = split(vimide#util#Globpath(path, '**/' . file_pattern), '\n')
+
+  " if none found, the search the path.
+  if len(files) == 0
+    let files = vimide#util#FindFileInPath(file_pattern, 0)
+    let path = ""
+  endif
+
+  let results = []
+
+  if len(files) > 0 && search_pattern != ''
+    " narrow down to, hopefully, a distribution path for a narrower search.
+    let response = vimide#util#PromptList(
+          \ "Multiple type matches. Pleases choose the relative file.",
+          \ files, g:VIdeInfoHighlight)
+
+    if response == -1
+      return
+    endif
+
+    let file = substitute(get(files, response), '\', '/', 'g')
+    if path == ''
+      let path = vimide#util#GetPathEntry(file)
+    endif
+
+    let path = escape(path, '/\')
+    let path = substitute(file, '\(' . path . '[/\\]\?.\{-}[/\\]\).*', '\1', '')
+    let pattern = substitute(pattern, '\*', '.\\\\{-}', 'g')
+    let search_pattern = substitute(search_pattern, '<element>', pattern, '')
+    let command = 'vimgrep /' . search_pattern . '/gj ' . path . '**/*.java'
+
+    silent! exec command
+
+    let loclist = getloclist(0)
+
+    for entry in loclist
+      let bufname = bufname(entry.bufnr)
+      let result = {
+            \ 'filename': bufname,
+            \ 'message':  entry.text,
+            \ 'line':     entry.lnum,
+            \ 'column':   entry.col,
+            \ }
+
+      " when searching for implementors, prevent dupes from the somewhat
+      " greedy pattern search (may need some more updating post conversion to
+      " dict results).
+      if a:argline !~ '-x implementors' || !vimide#util#ListContains(results, result)
+        call add(results, result)
+      endif
+    endfor
+  endif
+
+  call vimide#print#Echo(' ')
+  return results
+endfunction
+
+" ----------------------------------------------------------------------------
+" Views the supplied file in a browser, or if none proved, the file under the
+" cursor.
+"
+" ViewDoc:
+"   [url] - the url which the doc located.
+" ----------------------------------------------------------------------------
+function! s:ViewDoc(...)
+  let url = a:0 > 0 ? a:1 : substitute(getline('.'), '\(.\{-}\)|.*', '\1', '')
+
+  " handle javadocs inside of a jar
+  if url =~ '^jar:file:.*!'
+    call vimide#Execute(substitute(s:open_doc, '<url>', url, ''))
+  else
+    cal vimide#web#OpenUrl(url)
+  endif
 endfunction
 
 " ----------------------------------------------------------------------------
@@ -314,6 +454,22 @@ function! vimide#java#search#CommandCompleteJavaSearch(argLead, cmdLine, cursorP
   endif
 
   return []
+endfunction
+
+" ----------------------------------------------------------------------------
+" Used by non java source files to find the declaration of a classname under
+" the cursor.
+"
+" FindClassDeclaration:
+" ----------------------------------------------------------------------------
+function! vimide#java#search#FindClassDeclaration()
+  let line = getline('.')
+  let class = substitute(line,
+        \ '.\{-}\([0-9a-zA-Z_.]*\%' . col('.') . 'c[0-9a-zA-Z_.]*\).*', '\1', '')
+  if class != line && class != '' && class =~ '^[a-zA-Z]'
+    call vimide#java#search#SearchAndDisplay(
+          \ 'javaSearch', '-t classOrInterface -p ' . class)
+  endif
 endfunction
 
 " vim:ft=vim

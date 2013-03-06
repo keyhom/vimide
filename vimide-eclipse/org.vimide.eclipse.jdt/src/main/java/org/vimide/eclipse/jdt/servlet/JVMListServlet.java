@@ -70,7 +70,8 @@ public class JVMListServlet extends GenericVimideHttpServlet {
                             .getAbsolutePath());
                     result.put("id", install.getId());
                     String[] args = install.getVMArguments();
-                    result.put("args", args == null ? "" : Arrays.toString(args));
+                    result.put("args",
+                            args == null ? "" : Arrays.toString(args));
                     result.put("default", install.equals(defaultVMInstall) ? 1
                             : 0);
                     results.add(result);

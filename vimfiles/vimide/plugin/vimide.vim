@@ -133,6 +133,11 @@ if !exists(':Jobs')
   command Jobs :call vimide#Jobs()
 endif
 
+if !exists(':OpenUrl')
+  command -bang -range -nargs=? OpenUrl
+        \ :call vimide#web#OpenUrl('<args>', '<bang>', <line1>, <line2>)
+endif
+
 " ----------------------------------------------------------------------------
 "
 " Script Functions:
