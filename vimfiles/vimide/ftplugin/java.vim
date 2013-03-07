@@ -81,13 +81,16 @@ endif
 command! -buffer -range Format  :call vimide#java#src#Format(<line1>, <line2>)
 
 " Correct:
-command! -buffer Correct  :call vimide#java#src#Correct()
+command! -buffer Correct  :call vimide#java#correct#Correct()
 
 " Validate:
 command! -buffer Validate :call vimide#lang#UpdateSrcFile('java', 1)
 
 " Comment:
 command! -buffer Comment :call vimide#java#src#Comment()
+
+" Import:
+command! -buffer Import :call vimide#java#src#Import()
 
 " OrganizeImports:
 command! -buffer OrganizeImports :call vimide#java#src#OrganizeImports()

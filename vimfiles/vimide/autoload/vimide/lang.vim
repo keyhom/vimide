@@ -102,4 +102,119 @@ function! vimide#lang#SilentUpdate(...)
   return vimide#util#LegalPath(file)
 endfunction
 
+" ----------------------------------------------------------------------------
+" Executes the supplied refactoring command bundle error response and
+" reloading files that have changed.
+"
+" Refactor:
+"   command - the command
+" ----------------------------------------------------------------------------
+function! vimide#lang#Refactor(command)
+  let cwd = substitute(getcwd(), '\', '/', 'g')
+  let cwd_return = 1
+
+  try 
+    " turn off swap files temporarily to avoid issues with folder/file
+    " renaming.
+    let bufend = bufnr('$')
+    let bufnum = 1
+
+    while bufnum <= bufend
+      if bufexists(bufnum)
+        call setbufvar(bufnum, 'save_swapfile', getbufvar(bufnum, '&swapfile'))
+        call setbufvar(bufnum, '&swapfile', 0)
+      endif
+      let bufnum = bufnum + 1
+    endwhile
+
+    " cd to the project root to avoid folder renaming issues on windows.
+    exec 'cd ' . escape(vimide#project#impl#GetProjectRoot(), ' ')
+
+    let result = vimide#Execute(a:command)
+    if type(result) != g:LIST_TYPE && type(result) != g:DICT_TYPE
+      return
+    endif
+
+    " error occurred 
+    if type(result) == g:DICT_TYPE && has_key(result, 'errors')
+      call vimide#print#EchoError(result.errors)
+      return
+    endif
+
+    " reload affected files.
+    let curwin = winnr()
+    try 
+      for info in result
+        let newfile = ''
+        " handle file renames.
+        if has_key(info, 'to')
+          let file = info.from
+          let newfile = info.to
+          if has('win32unix')
+            let newfile = vimide#util#LegalPath(newfile, 1)
+          endif
+        else
+          let file = info.file
+        endif
+
+        if has('win32unix')
+          let file = vimide#util#LegalPath(file, 1)
+        endif
+
+        " ignore unchanged directories.
+        if isdirectory(file)
+          continue
+        endif
+
+        " handle correct working directory moved. 
+        if newfile != '' && isdirectory(newfile)
+          if file =~ '^' . cwd . '\(/\|$\)'
+            while cwd !~ '^' . file . '\(/\|$\)'
+              let file = fnamemodify(file, ':h')
+              let newfile = fnamemodify(newfile, ':h')
+            endwhile
+          endif
+
+          if cwd =~ '^' . file . '\(/\|$\)'
+            let dir = substitute(cwd, file, newfile, '')
+            exec 'cd ' . escape(dir, ' ')
+            let cwd_return = 0
+          endif
+          continue
+        endif
+
+        let winnr = bufwinnr(file)
+        if winnr > -1
+          exec winnr . 'winc w'
+          if newfile != ''
+            let bufnr = bufnr('%')
+            enew
+            exec 'bdelete ' . bufnr
+            exec 'edit ' . escape(vimide#util#Simplify(newfile), ' ')
+          else
+            call vimide#util#Reload({'retab' : 1})
+          endif
+        endif
+      endfor
+    finally
+      exec curwin . 'winc w'
+      if cwd_return
+        exec 'cd ' . escape(cwd, ' ')
+      endif
+    endtry
+  finally
+    " re-enable swap files
+    let bufnum = 1
+    while bufnum  <= bufend
+      if bufexists(bufnum)
+        let save_swapfile = getbufvar(bufnum, 'save_swapfile')
+        if save_swapfile != ''
+          call setbufvar(bufnum, '&swapfile', save_swapfile)
+        endif
+      endif
+      let bufnum = bufnum + 1
+    endwhile
+  endtry
+endfunction
+
 " vim:ft=vim

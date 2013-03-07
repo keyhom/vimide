@@ -87,6 +87,45 @@ function! vimide#project#impl#PrintCurrentProjectName()
 endfunction
 
 " ----------------------------------------------------------------------------
+" Gets the project root directory path.
+"
+" GetProjectRoot:
+"   [file]  - the file which in the project.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#GetProjectRoot(...)
+  let file = ''
+  if a:0 == 0
+    let file = expand('%:p')
+  elseif a:0 == 1 && a:1
+    let file = a:1
+  endif
+
+  let project = vimide#project#impl#GetProjectInfo(file)
+  if type(project) == g:DICT_TYPE
+    return project.path
+  endif
+  return ''
+endfunction
+
+" ----------------------------------------------------------------------------
+" Gets the project information object by the supplied file.
+"
+" GetProjectInfo:
+"   file  - the file.
+" ----------------------------------------------------------------------------
+function! vimide#project#impl#GetProjectInfo(file)
+  let projectName = vimide#project#impl#GetProject(a:file)
+  let command = s:command_project_info
+  let command = substitute(command, '<project>', projectName, '')
+
+  let result = vimide#Execute(command)
+  if type(result) == g:DICT_TYPE
+    return result
+  endif
+  return ''
+endfunction
+
+" ----------------------------------------------------------------------------
 " Build projects.
 "
 " ProjectBuild:

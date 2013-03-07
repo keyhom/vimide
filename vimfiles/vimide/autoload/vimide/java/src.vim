@@ -53,6 +53,8 @@ function! vimide#java#src#Format(first, last)
     return
   endif
 
+  call vimide#print#Echo('Formatting...')
+
   " silent updated.
   let file = vimide#lang#SilentUpdate()
   
@@ -69,6 +71,9 @@ function! vimide#java#src#Format(first, last)
   if result != '0'
     call vimide#util#Reload({'retab': 1})
     write
+    call vimide#print#EchoInfo('Formatted.')
+  else
+    call vimide#print#EchoError('Illegal response result.')
   endif
 endfunction
 
@@ -84,6 +89,8 @@ function! vimide#java#src#Comment()
     return
   endif
 
+  call vimide#print#Echo('Generating...')
+
   let file = vimide#lang#SilentUpdate()
   let offset = vimide#util#GetCurrentElementOffset()
 
@@ -98,6 +105,8 @@ function! vimide#java#src#Comment()
   if '0' != result
     call vimide#util#Reload({'retab': 1})
     write
+  else
+    call vimide#print#EchoError('Illegal response result.')
   endif
 endfunction
 
@@ -141,7 +150,7 @@ function! vimide#java#src#Import(...)
   endif
 
   if type(result) == g:DICT_TYPE
-    call vimide#util#Reload({'pos': [result.line, result.column]})
+    call vimide#util#Reload({'pos': [result.line, result.col]})
     call vimide#lang#UpdateSrcFile('java', 1)
     if result.offset != offset
       call vimide#print#Echo('Imported ' . (a:0 ? a:1 : ''))
@@ -170,6 +179,8 @@ function! vimide#java#src#OrganizeImports(...)
   if '' == project
     return
   endif
+
+  call vimide#print#Echo('Organizing imports...')
 
   let file = vimide#lang#SilentUpdate()
   let offset = vimide#util#GetCurrentElementOffset()

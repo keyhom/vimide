@@ -75,10 +75,17 @@ public final class JavaSourceFacade {
         }
 
         final JavaSourceService service = JavaSourceService.getInstance();
-        final Map<String, String> options = service.getOptions(project);
-
         ICompilationUnit src = service.getCompilationUnit(project.getProject(),
                 file);
+
+        return format(src, bOffset, eOffset);
+    }
+
+    public static boolean format(ICompilationUnit src, int bOffset, int eOffset)
+            throws CoreException {
+        final JavaSourceService service = JavaSourceService.getInstance();
+        final Map<String, String> options = service.getOptions(src
+                .getJavaProject());
 
         try {
             IDocument document = service.format(src, options, bOffset, eOffset);

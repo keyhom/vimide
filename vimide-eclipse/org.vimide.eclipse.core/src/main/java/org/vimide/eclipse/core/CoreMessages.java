@@ -98,6 +98,10 @@ public class CoreMessages extends NLS {
     public static String required_options_missing;
     public static String invalid_options;
 
+    /* tip messages */
+    public static String no_element_not_found;
+    public static String no_element_not_found_at;
+
     static {
         NLS.initializeMessages(BUNDLE_NAME, CoreMessages.class);
     }

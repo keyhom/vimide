@@ -24,6 +24,7 @@ package org.vimide.eclipse.jdt.service;
 
 import java.io.File;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.naming.CompositeName;
 
@@ -33,21 +34,33 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IProblemRequestor;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.text.correction.ContributedProcessorDescriptor;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jdt.ui.text.java.IQuickFixProcessor;
+
+import com.google.common.collect.Lists;
 
 /**
  * The basic service for the java functionally service.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
+@SuppressWarnings("restriction")
 public class JavaBaseService {
 
     public static final String JAR_PREFIX = "jar:file://";
@@ -76,6 +89,9 @@ public class JavaBaseService {
     public static final String TYPE_METHOD = "method";
     public static final String TYPE_PACKAGE = "package";
     public static final String TYPE_TYPE = "type";
+
+    static ContributedProcessorDescriptor[] correctionProcessors;
+    static ContributedProcessorDescriptor[] assistProcessors;
 
     /**
      * Gets the compilation unit by the supplied project and file.
@@ -447,5 +463,190 @@ public class JavaBaseService {
             return IJavaSearchConstants.PACKAGE;
         }
         return IJavaSearchConstants.TYPE;
+    }
+
+    /**
+     * Gets array of IQuickFixProcessor(s).
+     * 
+     * @param src the source file to get processors for.
+     * @return quick fix processors.
+     * @throws Exception
+     */
+    public IQuickFixProcessor[] getQuickFixProcessors(ICompilationUnit src)
+            throws Exception {
+        if (null == correctionProcessors) {
+            correctionProcessors = getProcessorDescriptors(
+                    "quickFixProcessors", true);
+        }
+        IQuickFixProcessor[] processors = new IQuickFixProcessor[correctionProcessors.length];
+        for (int i = 0; i < correctionProcessors.length; i++) {
+            processors[i] = (IQuickFixProcessor) correctionProcessors[i]
+                    .getProcessor(src, IQuickFixProcessor.class);
+        }
+        return processors;
+    }
+
+    /**
+     * Gets the descriptor object of the contributed processors.
+     * 
+     * @param id the id of the descriptor.
+     * @param testMarkerTypes true if to test the type of the marker, false
+     *            otherwise.
+     * @return the descriptor object.
+     * @throws Exception
+     */
+    private ContributedProcessorDescriptor[] getProcessorDescriptors(String id,
+            boolean testMarkerTypes) throws Exception {
+        IConfigurationElement[] elements = Platform.getExtensionRegistry()
+                .getConfigurationElementsFor(JavaUI.ID_PLUGIN, id);
+        List<ContributedProcessorDescriptor> res = Lists.newArrayList();
+
+        for (int i = 0; i < elements.length; i++) {
+            ContributedProcessorDescriptor desc = new ContributedProcessorDescriptor(
+                    elements[i], testMarkerTypes);
+            IStatus status = desc.checkSyntax();
+            if (status.isOK()) {
+                res.add(desc);
+            } else {
+                JavaPlugin.log(status);
+            }
+        }
+
+        return res.toArray(new ContributedProcessorDescriptor[res.size()]);
+    }
+
+    /**
+     * Gets the problems for a given src file.
+     * 
+     * @param src the source file.
+     * @return the problems.
+     * @throws Exception
+     */
+    public IProblem[] getProblems(ICompilationUnit src) throws Exception {
+        return getProblems(src, null);
+    }
+
+    /**
+     * Gets the problems for a given src file.
+     * 
+     * @param src the source file.
+     * @param ids array of problem ids to accept.
+     * @return the problems.
+     * @throws Exception
+     */
+    @SuppressWarnings("deprecation")
+    public IProblem[] getProblems(ICompilationUnit src, int... ids)
+            throws Exception {
+        ICompilationUnit workingCopy = src.getWorkingCopy(null);
+
+        ProblemRequestor requestor = new ProblemRequestor(ids);
+        try {
+            workingCopy.discardWorkingCopy();
+            workingCopy.becomeWorkingCopy(requestor, null);
+        } finally {
+            workingCopy.discardWorkingCopy();
+        }
+
+        List<IProblem> problems = requestor.getProblems();
+        return problems.toArray(new IProblem[problems.size()]);
+    }
+
+    /**
+     * Gets the requested problem at the supplied line and offset.
+     * 
+     * @param src the source.
+     * @param line the line the problem located at.
+     * @param offset the offset the problem located at.
+     * @return the problem or null if not found.
+     */
+    public IProblem getProblem(ICompilationUnit src, int line, int offset)
+            throws Exception {
+        IProblem[] problems = getProblems(src);
+        List<IProblem> errors = Lists.newArrayList();
+        for (IProblem problem : problems) {
+            if (problem.getSourceLineNumber() == line) {
+                errors.add(problem);
+            }
+        }
+
+        IProblem problem = null;
+
+        if (errors.isEmpty()) {
+            return null;
+        } else {
+            for (IProblem p : errors) {
+                if (offset < p.getSourceStart() && offset <= p.getSourceEnd()) {
+                    problem = p;
+                }
+            }
+        }
+
+        if (null == problem) {
+            problem = errors.get(0);
+        }
+        return problem;
+    }
+
+    /**
+     * Gathers problems as a src file is processed.
+     */
+    public static class ProblemRequestor implements IProblemRequestor {
+        private List<IProblem> problems = Lists.newArrayList();
+        private int[] ids;
+
+        /**
+         * Creates a ProblemRequestor object.
+         * 
+         * @param ids array of problem ids to accept.
+         */
+        public ProblemRequestor(int... ids) {
+            this.ids = ids;
+        }
+
+        /**
+         * Gets a list of problems recorded.
+         * 
+         * @return the list of problems.
+         */
+        public List<IProblem> getProblems() {
+            return problems;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public void acceptProblem(IProblem problem) {
+            if (null != ids) {
+                for (int i = 0; i < ids.length; i++) {
+                    if (problem.getID() == ids[i]) {
+                        problems.add(problem);
+                        break;
+                    }
+                }
+            } else {
+                problems.add(problem);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public void beginReporting() {
+            // empty override
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public void endReporting() {
+            // empty override
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public boolean isActive() {
+            return true;
+        }
     }
 }
