@@ -61,11 +61,11 @@ function! vimide#java#correct#Correct()
   call vimide#lang#SilentUpdate()
 
   let project = vimide#project#impl#GetProject()
-  let file = vimide#util#LegalPath(expand('%:p'))
+  let file = expand('%:p')
 
   let command = s:command_correct
   let command = substitute(command, '<project>', project, '')
-  let command = substitute(command, '<file>', file, '')
+  let command = substitute(command, '<file>', vimide#util#LegalPath(file, 2), '')
   let command = substitute(command, '<line>', line('.'), '')
   let command = substitute(command, '<offset>', vimide#util#GetOffset(), '')
 
@@ -127,14 +127,13 @@ function! vimide#java#correct#CorrectApply()
     let name = substitute(expand('%:p'), '_correct$', '', '')
     let file_winnr = bufwinnr(bufnr('^' . b:filename))
     if file_winnr != -1
-      let filename = b:filename
       exec file_winnr . "winc w"
       call vimide#lang#SilentUpdate()
 
       let index = substitute(line, '^\([0-9]\+\)\..*', '\1', '')
 
       let project = vimide#project#impl#GetProject()
-      let file = vimide#util#LegalPath(expand('%:p'))
+      let file = vimide#util#LegalPath(expand('%:p'), 2)
       let command = s:command_correct_apply
       let command = substitute(command, '<project>', project, '')
       let command = substitute(command, '<file>', file, '')

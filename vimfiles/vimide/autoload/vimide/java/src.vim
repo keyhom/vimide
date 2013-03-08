@@ -57,7 +57,7 @@ function! vimide#java#src#Format(first, last)
 
   " silent updated.
   let file = vimide#lang#SilentUpdate()
-  
+
   " get relative file path.
   let command = s:command_java_format
   let command = substitute(command, '<project>', project, '')

@@ -61,8 +61,9 @@ function! vimide#project#impl#GetProject(...)
   if path == ''
     let path = expand('%:p')
   endif
+
   if path != ''
-    let path = vimide#util#LegalPath(path)
+    let path = vimide#util#LegalPath(path, 2)
     let command = substitute(s:command_project_by_resource, '<file>', path, '')
     let result = vimide#Execute(command)
     if string(result) != ''
@@ -95,7 +96,7 @@ endfunction
 function! vimide#project#impl#GetProjectRoot(...)
   let file = ''
   if a:0 == 0
-    let file = expand('%:p')
+    let file = expand('%:p:h')
   elseif a:0 == 1 && a:1
     let file = a:1
   endif
@@ -216,12 +217,13 @@ function! vimide#project#impl#ProjectLCD(...)
   if a:0 > 0
     let project = a:1
   else
-    let project = vimide#project#impl#GetProject(expand('%:p'))
+    let project = vimide#project#impl#GetProject()
   endif
 
   if project != ''
     let command = substitute(s:command_project_info, '<project>', project, '')
     let result = vimide#Execute(command)
+
     if type(result) == g:DICT_TYPE
       let location = vimide#util#LegalPath(result.path)
       if location != ''

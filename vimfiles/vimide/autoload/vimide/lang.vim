@@ -44,7 +44,7 @@ let s:command_update_src_file = "/<lang>UpdateSrcFile?project=<project>&file=<fi
 "   validate  - the specific flag of validate.
 " ----------------------------------------------------------------------------
 function! vimide#lang#UpdateSrcFile(lang, validate)
-  let file = expand('%:p')
+  let file = vimide#util#LegalPath(expand('%:p'))
   let project = vimide#project#impl#GetProject(file)
   if '' != project
     let command = s:command_update_src_file
@@ -128,7 +128,7 @@ function! vimide#lang#Refactor(command)
     endwhile
 
     " cd to the project root to avoid folder renaming issues on windows.
-    exec 'cd ' . escape(vimide#project#impl#GetProjectRoot(), ' ')
+    exec 'cd ' . escape(vimide#util#LegalPath(vimide#project#impl#GetProjectRoot(), 1), ' ')
 
     let result = vimide#Execute(a:command)
     if type(result) != g:LIST_TYPE && type(result) != g:DICT_TYPE
