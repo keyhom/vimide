@@ -55,6 +55,12 @@ function! vimide#util#LegalPath(path, ...)
       let path = substitute(path, '^\(\w\)\:', '/cygdrive/\1', '')
       let path = substitute(path, '\', '/', 'g')
     endif
+  elseif (has('win32') || has('win64')) 
+    if (a:0 > 0 && a:1 == 2)
+      let path = substitute(path, '\', '/', 'g')
+    elseif (a:0 > 0 && a:1 == 1)
+      let path = substitute(path, '/', '\', 'g')
+    endif
   endif
 
   return path

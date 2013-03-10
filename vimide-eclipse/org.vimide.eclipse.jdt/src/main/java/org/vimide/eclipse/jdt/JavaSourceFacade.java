@@ -49,6 +49,13 @@ public final class JavaSourceFacade {
             .getLogger(JavaSourceFacade.class.getName());
 
     /**
+     * Creates a private JavaSourceFacade instance.
+     */
+    private JavaSourceFacade() {
+        super();
+    }
+
+    /**
      * Formats the java source elements.
      * 
      * @param project the java project.
@@ -81,6 +88,16 @@ public final class JavaSourceFacade {
         return format(src, bOffset, eOffset);
     }
 
+    /**
+     * Makes a format operation with the supplied source by the begin offset and
+     * end offset.
+     * 
+     * @param src the source file.
+     * @param bOffset the begin offset.
+     * @param eOffset the end offset.
+     * @return true if format the source complete successfully, false otherwise.
+     * @throws CoreException
+     */
     public static boolean format(ICompilationUnit src, int bOffset, int eOffset)
             throws CoreException {
         final JavaSourceService service = JavaSourceService.getInstance();

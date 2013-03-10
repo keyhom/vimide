@@ -55,8 +55,6 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.text.edits.TextEdit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.vimide.eclipse.core.refactoring.ResourceChangeListener;
 import org.vimide.eclipse.jdt.JavaSourceFacade;
 import org.vimide.eclipse.jdt.JdtMessages;
@@ -77,19 +75,13 @@ import com.google.common.collect.Sets;
 public class JavaCorrectService extends JavaBaseService {
 
     /**
-     * Logger.
-     */
-    static final Logger log = LoggerFactory.getLogger(JavaCorrectService.class
-            .getName());
-
-    /**
      * Singleton holder for {@link JavaCorrectService}.
      */
     private static class SingletonHolder {
         static final JavaCorrectService instance = new JavaCorrectService();
     }
 
-    private static final Set<Class<? extends IJavaCompletionProposal>> IGNORE_BY_TYPE = Sets
+    private final static Set<Class<? extends IJavaCompletionProposal>> IGNORE_BY_TYPE = Sets
             .newHashSet();
     static {
         IGNORE_BY_TYPE.add(NewCUUsingWizardProposal.class);

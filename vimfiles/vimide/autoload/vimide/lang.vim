@@ -44,13 +44,13 @@ let s:command_update_src_file = "/<lang>UpdateSrcFile?project=<project>&file=<fi
 "   validate  - the specific flag of validate.
 " ----------------------------------------------------------------------------
 function! vimide#lang#UpdateSrcFile(lang, validate)
-  let file = vimide#util#LegalPath(expand('%:p'))
+  let file = expand('%:p')
   let project = vimide#project#impl#GetProject(file)
   if '' != project
     let command = s:command_update_src_file
     let command = substitute(command, '<lang>', a:lang, '')
     let command = substitute(command, '<project>', project, '')
-    let command = substitute(command, '<file>', file, '')
+    let command = substitute(command, '<file>', vimide#util#LegalPath(file, 2), '')
 
     if a:validate
       let command .= '&validate=1'
@@ -99,7 +99,7 @@ function! vimide#lang#SilentUpdate(...)
       call setpos('.', pos)
     endtry
   endif
-  return vimide#util#LegalPath(file)
+  return vimide#util#LegalPath(file, 2)
 endfunction
 
 " ----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ function! vimide#lang#Refactor(command)
     finally
       exec curwin . 'winc w'
       if cwd_return
-        exec 'cd ' . escape(cwd, ' ')
+        exec 'lcd ' . escape(cwd, ' ')
       endif
     endtry
   finally

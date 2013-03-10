@@ -62,4 +62,67 @@ function! vimide#java#util#IsKeyword(word)
   return (a:word =~ '^' . s:keywords . '$\C')
 endfunction
 
+" ----------------------------------------------------------------------------
+" Gets a array of fields selected in the range.
+"
+" GetSelectedFields:
+"   first - the first line number.
+"   last  - the last line number.
+" ----------------------------------------------------------------------------
+function! vimide#java#util#GetSelectedFields(first, last) range
+  " normalize each field statement into a single line.
+  let selection = ''
+  let index = a:first
+  let blockcomment = 0
+  while index <= a:last
+    let line = getline(index)
+
+    " ignore comment lines.
+    if line =~ '^\s*/\*'
+      let blockcomment = 1
+    endif
+
+    if blockcomment && line =~ '\*/\s*$'
+      let blockcomment = 0
+    endif
+
+    if line !~ '^\s*//' && !blockcomment
+      " remove quoted values.
+      let line = substitute(line, '".\{-}"', '', 'g')
+      " strip off trailing comments.
+      let line = substitute(line, '//.*', '', '')
+      let line = substitute(line, '/\*.*\*/', '', '')
+
+      let selection = selection . line
+    endif
+
+    let index += 1
+  endwhile
+
+  " compact comma separated multi field declarations.
+  let selection = substitute(selection, ',\s*', ',', 'g')
+  
+  " break fields back up into their own line.
+  let selection = substitute(selection, ';', ';\n', 'g')
+
+  " remove the assignment portion of the field.
+  let selection = substitute(selection, '\(.\{-}\)\s*=.\{-};', '\1;', 'g')
+
+  " extract field names.
+  let properties = []
+  let lines = split(selection, '\n')
+  for line in lines
+    if line !~ '^\s*\/\/'
+      let fields = substitute(line, '.*\s\(.*\);', '\1', '')
+      if fields =~ '^[a-zA-Z0-9_,]'
+        for field in split(fields, ',')
+          call add(properties, field)
+        endfor
+      endif
+    endif
+  endfor
+
+  return properties
+endfunction
+
 " vim:ft=vim

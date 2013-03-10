@@ -23,7 +23,10 @@
 package org.vimide.eclipse.jdt.service;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +39,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
@@ -47,6 +51,9 @@ import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.Name;
@@ -58,6 +65,7 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jdt.core.search.TypeNameMatch;
+import org.eclipse.jdt.internal.corext.codemanipulation.AddCustomConstructorOperation;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation;
 import org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation.IChooseImportQuery;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationMessages;
@@ -65,12 +73,18 @@ import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.codemanipulation.OrganizeImportsOperation;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
+import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility2;
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
+import org.eclipse.jdt.internal.corext.dom.Bindings;
+import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
+import org.eclipse.jdt.internal.ui.actions.ActionMessages;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.jdt.ui.SharedASTProvider;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.MultiTextEdit;
@@ -78,6 +92,8 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.util.Position;
+import org.vimide.eclipse.jdt.JavaSourceFacade;
+import org.vimide.eclipse.jdt.JdtMessages;
 import org.vimide.eclipse.jdt.VimideJdtPlugin;
 import org.vimide.eclipse.jdt.util.ASTUtil;
 import org.vimide.eclipse.jdt.util.EclipseJdtUtil;
@@ -1036,5 +1052,166 @@ public class JavaSourceService extends JavaBaseService {
     public boolean isImportExcluded(IProject project, String name)
             throws Exception {
         return ImportUtil.isImportExcluded(project, name);
+    }
+
+    /* Impl/Override, Constructor, Fields, Getters, Setters source functions. */
+
+    /**
+     * Generates a constructor by the supplied arguments.
+     * 
+     * @param src the source file.
+     * @param type the type to generate.
+     * @param omitSuper true if omit the super constructor call, false
+     *            otherwise.
+     * @param fields the field selected.
+     * @return the error message or generation result.
+     * @throws Exception
+     */
+    public Object generateConstructor(ICompilationUnit src, IType type,
+            boolean omitSuper, String... fields) throws Exception {
+
+        if (null == src || null == type)
+            return null;
+
+        CompilationUnit cu = SharedASTProvider.getAST(src,
+                SharedASTProvider.WAIT_YES, null);
+        ITypeBinding typeBinding = ASTNodes.getTypeBinding(cu, type);
+        if (typeBinding.isAnonymous()) {
+            return ActionMessages.GenerateConstructorUsingFieldsAction_error_anonymous_class;
+        }
+
+        IVariableBinding[] variables = new IVariableBinding[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            IField field = type.getField(fields[i]);
+            if (!field.exists()) {
+                return NLS.bind(JdtMessages.no_element_not_found, field,
+                        type.getElementName());
+            }
+
+            variables[i] = ASTNodeSearchUtil.getFieldDeclarationFragmentNode(
+                    field, cu).resolveBinding();
+        }
+
+        if (findExistingConstructor(type, fields).exists()) {
+            return NLS.bind(JdtMessages.constructor_already_exists,
+                    type.getElementName() + '(' + buildParams(type, fields)
+                            + ')');
+        }
+
+        IMethodBinding constructor = findParentConstructor(cu, typeBinding,
+                variables);
+
+        if (null == constructor) {
+            return ActionMessages.GenerateConstructorUsingFieldsAction_error_nothing_found;
+        }
+
+        insertConstructor(src, cu, typeBinding, variables, constructor,
+                omitSuper);
+
+        return null;
+    }
+
+    private String buildParams(IType type, String[] fields) throws Exception {
+        StringBuilder params = new StringBuilder();
+        for (int i = 0; i < fields.length; i++) {
+            if (0 != i) {
+                params.append(", ");
+            }
+
+            IField field = type.getField(fields[i]);
+            params.append(
+                    Signature.getSignatureSimpleName(field.getTypeSignature()))
+                    .append(' ').append(field.getElementName());
+        }
+        return params.toString();
+    }
+
+    private void insertConstructor(ICompilationUnit src, CompilationUnit cu,
+            ITypeBinding typeBinding, IVariableBinding[] variables,
+            IMethodBinding constructor, boolean omitSuper) throws Exception {
+        CodeGenerationSettings settings = JavaPreferencesSettings
+                .getCodeGenerationSettings(src.getJavaProject());
+        settings.createComments = true;
+        boolean isDefault = constructor.getDeclaringClass().getQualifiedName()
+                .equals("java.lang.Object")
+                || constructor.isDefaultConstructor();
+
+        AddCustomConstructorOperation op = new AddCustomConstructorOperation(
+                cu, typeBinding, variables, constructor,
+                getSibling((IType) typeBinding.getJavaElement()), settings,
+                true, true);
+        op.setOmitSuper(omitSuper || isDefault);
+
+        if (!typeBinding.isEnum()) {
+            op.setVisibility(Modifier.PUBLIC);
+        }
+
+        op.run(null);
+
+        TextEdit edit = op.getResultingEdit();
+
+        if (null != edit) {
+            edit = edit.getChildren()[0];
+            JavaSourceFacade.format(src, edit.getOffset(), edit.getLength());
+        }
+    }
+
+    private IJavaElement getSibling(IType type) throws Exception {
+        IJavaElement sibling = null;
+        IMethod[] methods = type.getMethods();
+        for (int i = 0; i < methods.length; i++) {
+            if (methods[i].isConstructor()) {
+                sibling = i < methods.length - 1 ? methods[i + 1] : null;
+            }
+        }
+        // insert before any other methods or inner class if any.
+        if (null == sibling) {
+            if (methods.length > 0) {
+                sibling = methods[0];
+            } else {
+                IType[] types = type.getTypes();
+                sibling = types != null && types.length > 0 ? types[0] : null;
+            }
+        }
+        return sibling;
+    }
+
+    private IMethodBinding findParentConstructor(CompilationUnit cu,
+            ITypeBinding typeBinding, IVariableBinding[] variables) {
+        IMethodBinding constructor = null;
+        if (typeBinding.isEnum() || variables.length != 0) {
+            ITypeBinding binding = cu.getAST().resolveWellKnownType(
+                    "java.lang.Object");
+            constructor = Bindings.findMethodInType(binding, "Object",
+                    new ITypeBinding[0]);
+        } else {
+            IMethodBinding[] bindings = StubUtility2.getVisibleConstructors(
+                    typeBinding, false, true);
+            Arrays.sort(bindings, new Comparator<IMethodBinding>() {
+
+                @Override
+                public int compare(IMethodBinding o1, IMethodBinding o2) {
+                    return o1.getParameterTypes().length
+                            - o2.getParameterTypes().length;
+                }
+            });
+
+            constructor = bindings.length > 0 ? bindings[0] : null;
+        }
+
+        return constructor;
+    }
+
+    private IMethod findExistingConstructor(IType type, String... fields)
+            throws Exception {
+        if (0 == fields.length) {
+            return type.getMethod(type.getElementName(), null);
+        }
+
+        String[] fieldSigs = new String[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            fieldSigs[i] = type.getField(fields[i]).getTypeSignature();
+        }
+        return type.getMethod(type.getElementName(), fieldSigs);
     }
 }

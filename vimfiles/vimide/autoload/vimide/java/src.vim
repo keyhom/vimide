@@ -135,7 +135,7 @@ function! vimide#java#src#Import(...)
   let offset = vimide#util#GetOffset()
   let command = s:command_import
   let command = substitute(command, '<project>', project, '')
-  let command = substitute(command, '<file>', file, '')
+  let command = substitute(command, '<file>', vimide#util#LegalPath(file, 2), '')
   let command = substitute(command, '<offset>', offset, '')
 
   if a:0

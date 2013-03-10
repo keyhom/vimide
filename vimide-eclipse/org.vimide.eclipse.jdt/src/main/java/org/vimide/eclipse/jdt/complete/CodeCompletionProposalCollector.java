@@ -45,6 +45,8 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.ui.text.java.CompletionProposalCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.util.EclipseResourceUtil;
 import org.vimide.eclipse.jdt.search.SearchRequestor;
@@ -61,6 +63,12 @@ import com.google.common.collect.Lists;
 @SuppressWarnings("restriction")
 public class CodeCompletionProposalCollector extends
         CompletionProposalCollector {
+
+    /**
+     * Logger
+     */
+    static final Logger log = LoggerFactory
+            .getLogger(CodeCompletionProposalCollector.class.getName());
 
     private List<CompletionProposal> proposals = Lists.newArrayList();
     private List<String> imports;
@@ -86,27 +94,27 @@ public class CodeCompletionProposalCollector extends
             }
 
             // if (CompletionProposal.POTENTIAL_METHOD_DECLARATION != proposal
-            //         .getKind()) {
-                switch (proposal.getKind()) {
-                    case CompletionProposal.KEYWORD:
-                    case CompletionProposal.PACKAGE_REF:
-                    case CompletionProposal.TYPE_REF:
-                    case CompletionProposal.FIELD_REF:
-                    case CompletionProposal.METHOD_REF:
-                    case CompletionProposal.METHOD_NAME_REFERENCE:
-                    case CompletionProposal.METHOD_DECLARATION:
-                    case CompletionProposal.ANONYMOUS_CLASS_DECLARATION:
-                    case CompletionProposal.LABEL_REF:
-                    case CompletionProposal.LOCAL_VARIABLE_REF:
-                    case CompletionProposal.VARIABLE_DECLARATION:
-                    case CompletionProposal.ANNOTATION_ATTRIBUTE_REF:
-                    case CompletionProposal.POTENTIAL_METHOD_DECLARATION:
-                        proposals.add(proposal);
-                        super.accept(proposal);
-                        break;
-                    default:
-                        // do nothing.
-                // }
+            // .getKind()) {
+            switch (proposal.getKind()) {
+                case CompletionProposal.KEYWORD:
+                case CompletionProposal.PACKAGE_REF:
+                case CompletionProposal.TYPE_REF:
+                case CompletionProposal.FIELD_REF:
+                case CompletionProposal.METHOD_REF:
+                case CompletionProposal.METHOD_NAME_REFERENCE:
+                case CompletionProposal.METHOD_DECLARATION:
+                case CompletionProposal.ANONYMOUS_CLASS_DECLARATION:
+                case CompletionProposal.LABEL_REF:
+                case CompletionProposal.LOCAL_VARIABLE_REF:
+                case CompletionProposal.VARIABLE_DECLARATION:
+                case CompletionProposal.ANNOTATION_ATTRIBUTE_REF:
+                case CompletionProposal.POTENTIAL_METHOD_DECLARATION:
+                    proposals.add(proposal);
+                    super.accept(proposal);
+                    break;
+                default:
+                    // do nothing.
+                    // }
             }
         } catch (final IllegalArgumentException e) {
             // all signature processing method may throw IAEs
@@ -140,13 +148,16 @@ public class CodeCompletionProposalCollector extends
         // undefined type or attempting to complete static members of an
         // unimported type
 
+        log.info("The problem ID: {}", problem.getID());
+
         if (problem.getID() == IProblem.UndefinedType
-                || problem.getID() == IProblem.UndefinedTypeVariable) {
+                || problem.getID() == IProblem.UndefinedTypeVariable
+                || problem.getID() == IProblem.UnresolvedVariable) {
             try {
                 SearchPattern pattern = SearchPattern.createPattern(
                         problem.getArguments()[0], IJavaSearchConstants.TYPE,
                         IJavaSearchConstants.DECLARATIONS,
-                        SearchPattern.R_REGEXP_MATCH
+                        SearchPattern.R_EXACT_MATCH
                                 | SearchPattern.R_CASE_SENSITIVE);
                 IJavaSearchScope scope = SearchEngine
                         .createJavaSearchScope(new IJavaElement[] { javaProject });

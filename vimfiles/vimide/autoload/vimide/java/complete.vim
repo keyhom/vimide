@@ -62,13 +62,13 @@ let s:command_complete = '/javaComplete?project=<project>&file=<file>&offset=<of
 "   base      -
 " ----------------------------------------------------------------------------
 function! vimide#java#complete#CodeComplete(findstart, base)
-  let file = expand('%:p')
-  let project = vimide#project#impl#GetProject(file)
-  if '' == project
+  if !vimide#project#impl#IsCurrentFileInProject()
     return a:findstart ? -1 : []
   endif
 
   if a:findstart
+    write!
+
     " locate the start of the word.
     let line = getline('.')
     let start = col('.') - 1 
@@ -84,20 +84,20 @@ function! vimide#java#complete#CodeComplete(findstart, base)
 
     return start
   else
-    " current the file location.
-    let file = vimide#util#LegalPath(file)
+    " call vimide#lang#SilentUpdate()
+    write!
 
-    " save the file to supply the dirty commit.
-    write
-
+    let file = expand('%:p')
+    let project = vimide#project#impl#GetProject()
     let offset = vimide#util#GetOffset() + len(a:base)
+
     if '' == file
       return []
     endif
 
     let command = s:command_complete
     let command = substitute(command, '<project>', project, '')
-    let command = substitute(command, '<file>', file, '')
+    let command = substitute(command, '<file>', vimide#util#LegalPath(file, 2), '')
     let command = substitute(command, '<offset>', offset, '')
     let command = substitute(command, '<layout>', g:VIdeJavaCompleteLayout, '')
 

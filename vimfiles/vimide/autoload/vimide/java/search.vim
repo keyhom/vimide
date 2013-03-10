@@ -142,7 +142,7 @@ function! s:Search(command, ...)
 
   let in_project = vimide#project#impl#IsCurrentFileInProject()
   let project = vimide#project#impl#GetProject()
-  let file = vimide#util#LegalPath(expand('%:p'))
+  let file = expand('%:p')
   let pattern = ''
   let type = ''
   let caseSensitive = !&ignorecase
@@ -214,7 +214,7 @@ function! s:Search(command, ...)
   let search_cmd = s:search_element
   let search_cmd = substitute(search_cmd, '<search>', a:command, '')
   let search_cmd = substitute(search_cmd, '<project>', project, '')
-  let search_cmd = substitute(search_cmd, '<file>', file, '')
+  let search_cmd = substitute(search_cmd, '<file>', vimide#util#LegalPath(file, 2), '')
   let search_cmd = substitute(search_cmd, '<offset>', offset, '')
   let search_cmd = substitute(search_cmd, '<length>', length, '')
   let search_cmd .= '&' . other

@@ -103,4 +103,8 @@ command! -buffer -nargs=*
 " SearchContext:
 command! -buffer SearchContext :call vimide#java#search#SearchAndDisplay('javaSearch', '')
 
+" Constructor:
+command! -buffer -range=0 -bang Constructor 
+      \ :call vimide#java#impl#GenerateConstructor(<line1>, <line2>, '<bang>')
+
 " vim:ft=vim

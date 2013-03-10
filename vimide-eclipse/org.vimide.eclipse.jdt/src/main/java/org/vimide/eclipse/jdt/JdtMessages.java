@@ -27,15 +27,42 @@ import org.vimide.eclipse.core.CoreMessages;
 
 /**
  * JDT plugin message bindings.
- *
+ * 
  * @author keyhom (keyhom.c@gmail.com)
  */
 public class JdtMessages extends CoreMessages {
-    
+
     public static final String BUNDLE_NAME = "org.vimide.eclipse.jdt.messages";
-    
+
+    public static String class_not_found;
+    public static String type_not_found;
+    public static String type_not_a_class;
+    public static String src_contains_errors;
+    public static String constructor_already_exists;
+    public static String field_not_found;
+    public static String not_a_field;
+    public static String check_import;
+
     static {
         NLS.initializeMessages(BUNDLE_NAME, JdtMessages.class);
+    }
+
+    /**
+     * Creates a JdtMessages object by private.
+     */
+    private JdtMessages() {
+        super();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(JdtMessages.class.getName()).append(": [")
+                .append(BUNDLE_NAME).append("]");
+        return sb.toString();
     }
 
 }
