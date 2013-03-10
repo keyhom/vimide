@@ -738,10 +738,26 @@ public class JavaSourceService extends JavaBaseService {
         }
     }
 
+    /**
+     * Gets the text of author.
+     * 
+     * @return the text of author.
+     * @throws Exception
+     */
     private String getAuthor() throws Exception {
         return System.getProperty("user.name", "");
     }
 
+    /**
+     * Organzies the imports, grouping, sorting, clean etc for the supplied
+     * source.
+     * 
+     * @param src the source file.
+     * @param offset the offset.
+     * @param types the array of types.
+     * @return the position result or null if illegal.
+     * @throws Exception
+     */
     public Object organizeImports(ICompilationUnit src, int offset,
             String... types) throws Exception {
         int oldLength = src.getBuffer().getLength();
@@ -796,6 +812,15 @@ public class JavaSourceService extends JavaBaseService {
         return null;
     }
 
+    /**
+     * Imports the type of the supplied source.
+     * 
+     * @param src the source file.
+     * @param offset the offset the type element located.
+     * @param typeName the name of type.
+     * @return the position result or error string if error caught.
+     * @throws Exception
+     */
     public Object importType(ICompilationUnit src, int offset, String typeName)
             throws Exception {
         TextEdit edits = null;

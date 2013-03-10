@@ -64,15 +64,13 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
     protected void doGet(VimideHttpServletRequest req,
             VimideHttpServletResponse resp) throws ServletException,
             IOException {
-        IProject project = getProject(req);
-
+        final IProject project = getProject(req);
         if (null == project || !project.exists()) {
             resp.sendError(403);
             return;
         }
 
-        File file = getFile(req);
-
+        final File file = getFile(req);
         if (null == file || !file.exists()) {
             resp.sendError(403);
             return;
@@ -85,20 +83,16 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
         }
 
         // Obtains the compilation unit with src.
-        IFile iFile = project.getFile(new Path(file.getPath())
+        final IFile iFile = project.getFile(new Path(file.getPath())
                 .makeRelativeTo(project.getLocation()));
-        // try {
-        //     iFile.refreshLocal(IResource.DEPTH_INFINITE, null);
-        // } catch (final CoreException e) {
-        //     LOGGER.error("", e);
-        // }
 
-        String layout = req.getNotNullParameter("layout");
-        ICompilationUnit src = JavaCore.createCompilationUnitFrom(iFile);
+        final String layout = req.getNotNullParameter("layout");
+        final ICompilationUnit src = JavaCore.createCompilationUnitFrom(iFile);
         Object result = null;
 
         try {
-            result = CodeCompletionService.getInstance().calculate(src, offset, layout);
+            result = CodeCompletionService.getInstance().calculate(src, offset,
+                    layout);
         } catch (final Exception e) {
             LOGGER.error("", e);
         }

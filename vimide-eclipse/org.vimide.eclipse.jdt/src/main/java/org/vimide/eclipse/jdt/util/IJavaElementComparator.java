@@ -34,6 +34,12 @@ import org.eclipse.jdt.core.IJavaElement;
 public class IJavaElementComparator implements Comparator<IJavaElement> {
 
     /**
+     * Creates a IJavaElementComparator object.
+     */
+    public IJavaElementComparator() {
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
