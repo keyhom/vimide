@@ -24,16 +24,6 @@
 
 " ----------------------------------------------------------------------------
 "
-" Command Declartions:
-"
-" ----------------------------------------------------------------------------
-
-if !exists(':VIde')
-  command VIde :call <SID>Validate()
-endif
- 
-" ----------------------------------------------------------------------------
-"
 " Script Variables:
 "
 " ----------------------------------------------------------------------------
@@ -165,5 +155,30 @@ endfunction
 
 " Do initialized.
 call <SID>Init()
+
+" ----------------------------------------------------------------------------
+"
+" Autocmd Declarations:
+"
+" ----------------------------------------------------------------------------
+augroup Vimide_autocmd
+  au!
+  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>j :Comment<cr>
+  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>f :%Format<cr>
+  autocmd FileType java nnoremap <silent> <buffer> <leader><leader><cr> :Correct<cr>
+  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>o :OrganizeImports<cr>
+  autocmd FileType java nnoremap <silent> <buffer> <F3> :SearchContext<cr>
+  autocmd FileType java nnoremap <silent> <buffer> <F4> :Hierarchy<cr>
+augroup END
+
+" ----------------------------------------------------------------------------
+"
+" Command Declartions:
+"
+" ----------------------------------------------------------------------------
+
+if !exists(':VIde')
+  command VIde :call <SID>Validate()
+endif
 
 " vim:ft=vim

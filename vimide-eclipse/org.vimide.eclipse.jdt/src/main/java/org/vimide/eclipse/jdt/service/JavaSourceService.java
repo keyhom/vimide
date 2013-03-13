@@ -1239,4 +1239,5 @@ public class JavaSourceService extends JavaBaseService {
         }
         return type.getMethod(type.getElementName(), fieldSigs);
     }
+
 }

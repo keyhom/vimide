@@ -367,7 +367,7 @@ function! vimide#java#search#SearchAndDisplay(type, args)
       " if only one result and it's for the current file, just jump to it.
       " note: on windows the expand result must be escaped.
       if len(results) == 1 && locs[0].bufnr == bufnr('%')
-        if results[0].line != 1 && results[0].column != 1
+        if results[0].line != 1 && results[0].col != 1
           lfirst
         endif
       elseif len(results) == 1 && g:VIdeJavaSearchSingleResult != "lopen"
@@ -384,13 +384,13 @@ function! vimide#java#search#SearchAndDisplay(type, args)
     elseif a:type == 'javaDocSearch'
       let window_name = 'javaDocSearchResults'
       let filename = expand('%:p')
-      call vimide#util#TempWindowClear(window_name)
+      call vimide#window#TempWindowClear(window_name)
 
       if len(results) == 1 && g:VIdeJavaDocSearchSingleResult == 'open'
         let entry = results[0]
         call s:ViewDoc(entry)
       else
-        call vimide#util#TempWindow(window_name, results, {'height': g:VIdeLocationListHeight})
+        call vimide#window#TempWindow(window_name, results, {'height': g:VIdeLocationListHeight})
 
         nnoremap <silent> <buffer> <cr> :call <SID>ViewDoc()<cr>
         augroup temp_window

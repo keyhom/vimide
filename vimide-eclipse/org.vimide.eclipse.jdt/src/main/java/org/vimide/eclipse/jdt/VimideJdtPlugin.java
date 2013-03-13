@@ -31,6 +31,8 @@ import org.vimide.eclipse.jdt.servlet.JVMListServlet;
 import org.vimide.eclipse.jdt.servlet.JavaConstructorServlet;
 import org.vimide.eclipse.jdt.servlet.JavaCorrectServlet;
 import org.vimide.eclipse.jdt.servlet.JavaSearchServlet;
+import org.vimide.eclipse.jdt.servlet.impl.JavaGetSetServlet;
+import org.vimide.eclipse.jdt.servlet.impl.JavaImplServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaDocCommentServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaFormatServlet;
 import org.vimide.eclipse.jdt.servlet.source.JavaImportServlet;
@@ -48,6 +50,13 @@ public class VimideJdtPlugin extends VimidePlugin {
      * ID of the {@link VimideJdtPlugin}.
      */
     public static final String PLUGIN_ID = "org.vimide.eclipse.jdt";
+
+    /**
+     * Default Constructor.
+     */
+    public VimideJdtPlugin() {
+        super();
+    }
 
     /**
      * {@inheritDoc}
@@ -72,6 +81,8 @@ public class VimideJdtPlugin extends VimidePlugin {
                 .registerServlet(JavaCorrectServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 JavaConstructorServlet.class);
+        VimideHttpServer.getInstance().registerServlet(JavaGetSetServlet.class);
+        VimideHttpServer.getInstance().registerServlet(JavaImplServlet.class);
     }
 }
 

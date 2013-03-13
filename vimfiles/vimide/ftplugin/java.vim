@@ -107,4 +107,19 @@ command! -buffer SearchContext :call vimide#java#search#SearchAndDisplay('javaSe
 command! -buffer -range=0 -bang Constructor 
       \ :call vimide#java#impl#GenerateConstructor(<line1>, <line2>, '<bang>')
 
+" Getter:
+command! -buffer -range -bang Get
+      \ :call vimide#java#impl#GenerateGetterSetter(<line1>, <line2>, '<bang>', 1)
+
+" Setter:
+command! -buffer -range -bang Set
+      \ :call vimide#java#impl#GenerateGetterSetter(<line1>, <line2>, '<bang>', 2)
+
+" GetSet:
+command! -buffer -range -bang GetSet
+      \ :call vimide#java#impl#GenerateGetterSetter(<line1>, <line2>, '<bang>', 0)
+
+" Impl:
+command! -buffer Impl :call vimide#java#impl#Impl()
+
 " vim:ft=vim
