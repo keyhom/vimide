@@ -158,6 +158,18 @@ call <SID>Init()
 
 " ----------------------------------------------------------------------------
 "
+" Filetype Mapping:
+"
+" ---------------------------------------------------------------------------- 
+
+augroup Vimide_filetype
+  au!
+  " enable the actionscript filetype mapping the as file by default.
+  autocmd BufNewFile,BufRead,BufEnter *.as setf actionscript
+augroup END
+
+" ----------------------------------------------------------------------------
+"
 " Autocmd Declarations:
 "
 " ----------------------------------------------------------------------------

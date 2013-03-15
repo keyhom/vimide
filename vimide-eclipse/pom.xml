@@ -169,6 +169,7 @@
     <module>org.vimide.eclipse.core</module>
     <module>org.vimide.eclipse.jdt</module>
     <module>org.vimide.eclipse.ui</module>
+    <module>org.vimide.eclipse.flashbuilder</module>
     <module>vimide-target-definition</module>
     <module>org.vimide.eclipse.m2e</module>
     <module>org.vimide.eclipse.vimplugin</module>
