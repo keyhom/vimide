@@ -23,20 +23,31 @@
 package org.vimide.eclipse.flashbuilder.servlet;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 
+import org.eclipse.core.runtime.IStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 
+import com.adobe.flexbuilder.project.internal.FlexProjectCore;
+import com.adobe.flexbuilder.project.sdks.IFlexSDK;
+import com.adobe.flexbuilder.project.sdks.IFlexSDKPreferences;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 /**
  * Requests to list all Flex SDK installed.
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
+@WebServlet(urlPatterns = "/flexListSdks")
 public class SdkListServlet extends GenericVimideHttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -47,16 +58,45 @@ public class SdkListServlet extends GenericVimideHttpServlet {
     static final Logger log = LoggerFactory.getLogger(SdkListServlet.class
             .getName());
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void doGet(VimideHttpServletRequest req,
             VimideHttpServletResponse resp) throws ServletException,
             IOException {
-        System.out.println("SdkListServlet");
-        Object result = null;
+        final List<Map<String, Object>> results = Lists.newArrayList();
 
-        if (null == result)
-            result = 1;
-        resp.writeAsJson(result);
+        final IFlexSDKPreferences preferences = FlexProjectCore.getDefault()
+                .getFlexSDKPreferences();
+        final IFlexSDK defaultSdk = preferences.getDefaultFlexSDK();
+        final IFlexSDK[] sdks = preferences.getItems();
+
+        for (IFlexSDK sdk : sdks) {
+            Map<String, Object> sdkEntry = Maps.newHashMap();
+            sdkEntry.put("name", sdk.getName());
+            sdkEntry.put("version", sdk.getVersion().toString());
+            sdkEntry.put("path", sdk.getLocation().toOSString());
+            sdkEntry.put("targetPlayerVersion", sdk.getTargetPlayerVersion()
+                    .toString());
+            sdkEntry.put("valid", sdk.isValid() ? 1 : 0);
+
+            IStatus status = sdk.validate();
+            if (!status.isOK()) {
+                sdkEntry.put("error", 1);
+                sdkEntry.put("message", status.getMessage());
+            }
+
+            if (sdk == defaultSdk || sdk.equals(defaultSdk)) {
+                sdkEntry.put("default", 1);
+            } else {
+                sdkEntry.put("default", 0);
+            }
+
+            results.add(sdkEntry);
+        }
+
+        resp.writeAsJson(results);
     }
 
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>vimide-parent</artifactId>
@@ -25,7 +26,7 @@
 
     <!-- defined for Maven. -->
     <maven.test.skip>true</maven.test.skip>
-<!--     <eclipse-repository.url>http://download.eclipse.org/releases/indigo/</eclipse-repository.url> -->
+    <!-- <eclipse-repository.url>http://download.eclipse.org/releases/indigo/</eclipse-repository.url> -->
     <eclipse-repository.url>http://eclipse.7.com/releases/indigo/</eclipse-repository.url>
   </properties>
 
@@ -69,7 +70,7 @@
                 <groupId>${project.groupId}</groupId>
                 <artifactId>vimide-target-definition</artifactId>
                 <version>${project.version}</version>
-<!--                 <classifier>vimide-target-definition-${project.version}</classifier> -->
+                <!-- <classifier>vimide-target-definition-${project.version}</classifier> -->
               </artifact>
             </target>
             <environments>
@@ -131,7 +132,35 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore/>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-packaging-plugin</artifactId>
+                    <versionRange>[0.16.0,)</versionRange>
+                    <goals>
+                      <goal>validate-version</goal>
+                      <goal>validate-id</goal>
+                      <goal>build-qualifier</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.eclipse.tycho</groupId>
+                    <artifactId>tycho-compiler-plugin</artifactId>
+                    <versionRange>[0.16.0,)</versionRange>
+                    <goals>
+                      <goal>compile</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
                   </action>
                 </pluginExecution>
               </pluginExecutions>

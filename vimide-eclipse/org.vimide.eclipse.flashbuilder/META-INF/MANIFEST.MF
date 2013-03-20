@@ -12,13 +12,13 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.text,
  org.eclipse.jface.text,
  org.eclipse.ltk.core.refactoring,
+ com.adobe.flexbuilder.codemodel,
+ com.adobe.flexide.launching,
+ com.adobe.flexbuilder.project,
+ com.adobe.flexide.amt,
+ com.adobe.flexbuilder.as.editor,
  org.vimide.eclipse.core
 Export-Package: org.vimide.eclipse.flashbuilder
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: .,
- commons-logging-1.1.1.jar,
- commons-vfs-1.0.jar,
- javassist-3.6.0.GA.jar,
- scannotation-1.0.2.jar,
- vimide-core-1.0.0-SNAPSHOT.jar
+Bundle-ClassPath: .

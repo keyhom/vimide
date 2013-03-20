@@ -71,21 +71,24 @@ function! s:GetLibXgetPath()
           endif
         endfor
       endif
-    else " find with runtimepath.
-      let arr = split(&runtimepath, ',')
-      if len(arr) > 0
-        for a in arr
-          let file = findfile(s:libfilename, a)
-          if file != ''
-            if file =~ a
-              let g:VIde_LibXget = file
-            elseif file =~ s:libfilename
-              let g:VIde_LibXget = a . g:VIdeSeparator . file
-            endif
-            break
+    endif
+  endif
+
+  if !exists('g:VIde_LibXget') || g:VIde_LibXget == '' 
+    " find with runtimepath.
+    let arr = split(&runtimepath, ',')
+    if len(arr) > 0
+      for a in arr
+        let file = findfile(s:libfilename, a)
+        if file != ''
+          if file =~ a
+            let g:VIde_LibXget = file
+          elseif file =~ s:libfilename
+            let g:VIde_LibXget = a . g:VIdeSeparator . file
           endif
-        endfor
-      endif
+          break
+        endif
+      endfor
     endif
   endif
   return g:VIde_LibXget

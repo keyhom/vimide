@@ -73,7 +73,7 @@ public class ASTUtil {
      */
     public static CompilationUnit getCompilationUnit(ICompilationUnit src,
             boolean recordModifications) {
-        ASTParser parser = ASTParser.newParser(AST.JLS4);
+        ASTParser parser = ASTParser.newParser(AST.JLS3);
         parser.setSource(src);
         CompilationUnit cu = (CompilationUnit) parser.createAST(null);
         if (recordModifications)

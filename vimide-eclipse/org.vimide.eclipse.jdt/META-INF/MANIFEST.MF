@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Vendor: keyhom.org
+Bundle-Vendor: Keyhom's Labs
 Bundle-Name: Vimide JDT Plugin
 Bundle-SymbolicName: org.vimide.eclipse.jdt;singleton:=true
 Bundle-Version: 1.0.0.qualifier

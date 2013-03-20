@@ -25,7 +25,11 @@ package org.vimide.eclipse.flashbuilder;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.vimide.core.server.VimideHttpServer;
 import org.vimide.eclipse.core.VimidePlugin;
+import org.vimide.eclipse.flashbuilder.servlet.CodeCompleteServlet;
+import org.vimide.eclipse.flashbuilder.servlet.FlexUpdateSrcServlet;
+import org.vimide.eclipse.flashbuilder.servlet.SdkListServlet;
 
 /**
  * Represents a eclipse plugin for flashbuilder extension of Vimide.
@@ -62,11 +66,19 @@ public class VimideFbPlugin extends VimidePlugin {
         plugin = this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void activate(BundleContext context) {
         super.activate(context);
 
-        // actived here.
+        // List SDKs.
+        VimideHttpServer.getInstance().registerServlet(SdkListServlet.class);
+        VimideHttpServer.getInstance().registerServlet(
+                FlexUpdateSrcServlet.class);
+        VimideHttpServer.getInstance().registerServlet(
+                CodeCompleteServlet.class);
     }
 
 }
