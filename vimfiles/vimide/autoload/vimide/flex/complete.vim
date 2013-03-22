@@ -113,13 +113,66 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
     endif
 
     if has_key(result, 'error') && len(result.completions) == 0
-      call vimide#print#EchoError(result.error.message)
+      if type(result.error) == g:DICT_TYPE && has_key(result.error, 'message')
+        call vimide#print#EchoError(result.error.message)
+      endif
       return -1
     endif
 
+    " if the word has a '.' in it (like package completion) then we need to
+    " strip some off according to what is currently in the buffer.
+    let prefix = substitute(getline('.'), 
+          \ '.\{-}\([[:alnum:].]\+\%' . col('.') . 'c\).*', '\1', '')
+
+    " as of eclipse 3.2 it will include the parens on a completion result even
+    " if the file already has them.
+    let open_paren = getline('.') =~ '\%' . col('.') . 'c\s*('
+    let close_paren = getline('.') =~ '\%' . col('.') . 'c\s*(\s*)'
+
+    " when completing imports, the completions include ending ';'
+    let semicolon = getline('.') =~ '\%' . col('.') . 'c\s*;'
+
+    for entry in result.completions
+      let word = entry.completion
+
+      " strip off prefix if necessory.
+      if word =~ '\.'
+        let word = substitute(word, prefix, '', '')
+      endif
+
+      " strip off semicolon if necessary.
+      if word =~ ';$' && semicolon
+        let word = strpart(word, 0, strlen(word) - 1)
+      endif
+
+      " if user wants case sensitivity, then filter out completions that don't
+      " match
+      if g:VIdeFlexCompleteCaseSensitive && a:base != ''
+        if word !~ '^' . a:base . '\C'
+          continue
+        endif
+      endif
+
+      let menu = entry.menu
+      " wrap info from html to text.
+      " let info = 
+      let info = menu
+      let abbr = entry.abbreviation
+
+      let dict = {
+            \ 'word': word,
+            \ 'abbr': abbr,
+            \ 'menu': menu,
+            \ 'info': info,
+            \ 'kind': entry.type,
+            \ 'dup' : 0,
+            \ 'icase': !g:VIdeFlexCompleteCaseSensitive,
+            \ }
+      call add(completions, dict)
+    endfor
+
     return completions
   endif
-  return []
 endfunction
 
 
