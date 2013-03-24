@@ -24,37 +24,35 @@ package org.vimide.eclipse.flashbuilder.servlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
-import org.apache.commons.io.FileUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.ITextViewer;
+import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.core.util.FileObject;
+import org.vimide.eclipse.core.complete.CodeCompletionResult;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
+import org.vimide.eclipse.jface.text.DummyTextViewer;
 
-import com.adobe.flexbuilder.codemodel.common.CMFactory;
-import com.adobe.flexbuilder.codemodel.definitions.IDefinition;
-import com.adobe.flexbuilder.codemodel.tree.ASOffsetInformation;
-import com.adobe.flexbuilder.codemodel.tree.CompletionInformation;
-import com.adobe.flexbuilder.codemodel.tree.IFileNode;
 import com.adobe.flexide.as.core.ASCorePlugin;
-import com.adobe.flexide.as.core.document.ASDocument;
-import com.adobe.flexide.editorcore.document.IFlexDocument;
+import com.adobe.flexide.as.core.contentassist.ActionScriptCompletionProcessor;
+import com.adobe.flexide.as.core.contentassist.ActionScriptCompletionProposal;
+import com.adobe.flexide.editorcore.contentassist.FlexCompletionProposal;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -91,7 +89,7 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
             offset = new FileObject(file).getCharLength(offset);
         }
 
-        String layout = req.getParameter("layout");
+        // String layout = req.getParameter("layout");
 
         Map<String, Object> results = Maps.newHashMap();
 
@@ -99,10 +97,8 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
             results.put("error", "");
             results.put("imports", "");
             results.put("completions",
-                    calcCodeComplete(project, file, offset, layout));
+                    calculateCompletion(project, file, offset));
 
-            // for test only.
-            calculateCompletion(project, file, offset);
         } catch (final Exception e) {
             e.printStackTrace();
         }
@@ -110,52 +106,17 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
         resp.writeAsJson(results);
     }
 
-    private Object calcCodeComplete(IProject project, File file, int offset,
-            String layout) throws Exception {
-        List<Object> results = Lists.newArrayList();
-        synchronized (CMFactory.getLockObject()) {
-            IPath filePath = new Path(file.getAbsolutePath());
-            com.adobe.flexbuilder.codemodel.project.IProject asProject = CMFactory
-                    .getManager().getProjectForFile(filePath);
-            // IDocumentSpecification document = CMFactory.getManager()
-            // .getDocumentForPath(filePath);
-            String fileContent = FileUtils.readFileToString(file, "UTF-8");
-            IFlexDocument document = new ASDocument(fileContent);
-            IFileNode fileNode = asProject.findFileNodeInProject(filePath);
-            if (null != fileNode) {
-                ASOffsetInformation offsetInformation = new ASOffsetInformation(
-                        offset, fileNode);
-
-                CompletionInformation completionInformation = offsetInformation
-                        .getCompletionInfo(document);
-                IDefinition[] definitions = completionInformation
-                        .getDefinitions();
-
-                if (null != definitions)
-                    for (IDefinition definition : definitions) {
-                        Map<String, Object> completionEntry = Maps.newHashMap();
-                        completionEntry.put("completion", definition.getName());
-                        completionEntry.put("abbreviation",
-                                definition.getName());
-                        completionEntry.put("menu", "");
-                        completionEntry.put("info", "");
-                        completionEntry.put("type", "x");
-                        results.add(completionEntry);
-                    }
-            }
-
-        }
-
-        return results;
-    }
-
-    public Object calculateCompletion(IProject project, File file, int offset)
+    Object calculateCompletion(IProject project, File file, int offset)
             throws Exception {
+
+        final List<CodeCompletionResult> results = Lists.newArrayList();
+
         IPath filePath = new Path(file.getAbsolutePath());
         IFile ifile = project.getFile(filePath.makeRelativeTo(project
                 .getLocation()));
         if (null != ifile)
-            ifile.refreshLocal(IResource.DEPTH_INFINITE, null); // refresh the buffer.
+            ifile.refreshLocal(IResource.DEPTH_INFINITE, null); // refresh the
+                                                                // buffer.
 
         ASCorePlugin corePlugin = ASCorePlugin.getDefault();
         IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
@@ -163,10 +124,60 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
         documentProvider.connect(ifile);
         // retrieves the actionscript document.
         IDocument document = documentProvider.getDocument(ifile);
-        if (null != document) {
-            log.info("The document was valid!");
+        try {
+            if (null != document) {
+                ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
+                ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
+                if (processor.hasCompletionProposals(textViewer, offset)) {
+                    ICompletionProposal[] proposals = processor
+                            .computeCompletionProposals(textViewer, offset);
+                    for (ICompletionProposal proposal : proposals) {
+                        String completion = null;
+                        String menu = proposal.getDisplayString();
+                        @SuppressWarnings("unused")
+                        String info = proposal.getAdditionalProposalInfo();
+                        String abbreviation = null;
+                        String type = "?";
+                        String replacementString = null;
+
+                        if (proposal instanceof ActionScriptCompletionProposal) {
+                            ActionScriptCompletionProposal lazy = (ActionScriptCompletionProposal) proposal;
+                            abbreviation = lazy.getName();
+                            menu = lazy.getStyledDisplayString().toString();
+                            replacementString = lazy.getReplacementString();
+                        } else if (proposal instanceof FlexCompletionProposal) {
+                            FlexCompletionProposal lazy = (FlexCompletionProposal) proposal;
+                            abbreviation = lazy.getName();
+                            menu = lazy.getDisplayString();
+                            replacementString = lazy.getReplacementString();
+                        }
+
+                        Field fReplacementLength = FlexCompletionProposal.class
+                                .getDeclaredField("fReplacementLength");
+                        boolean accessibleFlag = fReplacementLength
+                                .isAccessible();
+                        fReplacementLength.setAccessible(true);
+                        int replacementLength = fReplacementLength
+                                .getInt(proposal);
+                        fReplacementLength.setAccessible(accessibleFlag);
+                        completion = replacementString
+                                .substring(replacementLength);
+
+                        // results.add(new CodeCompletionResult(completion,
+                        // abbreviation, menu, Strings.isNullOrEmpty(info) ?
+                        // menu : info, type));
+                        results.add(new CodeCompletionResult(completion,
+                                abbreviation, menu, menu, type));
+                    }
+                }
+            }
+        } finally {
+            if (null != document) {
+                document = null;
+                documentProvider.disconnect(ifile);
+            }
         }
-        return null;
+        return results;
     }
 }
 

@@ -30,6 +30,8 @@
 setlocal tw=80
 setlocal sw=4
 setlocal sw=4
+setlocal ci
+setlocal syntax=java
 
 if !exists('g:VIdeASValidate')
   let g:VIdeASValidate = 1
@@ -65,7 +67,7 @@ if &ft == 'actionscript'
   augroup vimide_actionscript
     autocmd! BufWritePost <buffer>
     autocmd BufWritePost <buffer>
-          \ call vimide#lang#UpdateSrcFile('flex', g:VIdeASValidate)
+          \ call vimide#lang#UpdateSrcFile('flex', g:VIdeASValidate, 1)
   augroup END
 endif
 

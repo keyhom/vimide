@@ -33,6 +33,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.swt.widgets.Display;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
@@ -82,25 +83,36 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
             offset = new FileObject(file).getCharLength(offset);
         }
 
+        final int charOffset = offset;
+
         // Obtains the compilation unit with src.
         final IFile iFile = project.getFile(new Path(file.getPath())
                 .makeRelativeTo(project.getLocation()));
 
         final String layout = req.getNotNullParameter("layout");
         final ICompilationUnit src = JavaCore.createCompilationUnitFrom(iFile);
-        Object result = null;
+        final Object[] result = new Object[] { null };
 
-        try {
-            result = CodeCompletionService.getInstance().calculate(src, offset,
-                    layout);
-        } catch (final Exception e) {
-            LOGGER.error("", e);
-        }
+        Display.getDefault().syncExec(new Runnable() {
 
-        if (null == result)
-            result = 1;
+            /**
+             * {@inheritDoc}
+             */
+            @Override
+            public void run() {
+                try {
+                    result[0] = CodeCompletionService.getInstance().calculate(
+                            src, charOffset, layout);
+                } catch (final Exception e) {
+                    LOGGER.error("", e);
+                }
+            }
+        });
 
-        resp.writeAsJson(result);
+        if (null == result[0])
+            result[0] = 1;
+
+        resp.writeAsJson(result[0]);
     }
 
 }

@@ -24,16 +24,31 @@ package org.vimide.eclipse.flashbuilder.servlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceVisitor;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
+import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
+import org.vimide.eclipse.core.util.EclipseResourceUtil;
+
+import com.google.common.collect.Lists;
 
 /**
  * Requests to update the supplied source element.
@@ -67,11 +82,90 @@ public class FlexUpdateSrcServlet extends GenericVimideHttpServlet {
             return;
         }
 
-        log.info("Update Flex src file: {}", file.getPath());
+        final IPath path = new Path(file.getAbsolutePath())
+                .makeRelativeTo(project.getLocation());
+        final IFile ifile = project.getFile(path);
+
+        final boolean validate = req.getIntParameter("validate", 0) != 0 ? true
+                : false;
+        final boolean build = req.getIntParameter("build", 0) != 0 ? true
+                : false;
+
+        if (null != ifile && ifile.exists()) {
+            try {
+                ifile.refreshLocal(IResource.DEPTH_INFINITE, null);
+            } catch (final CoreException e) {
+                log.error("Refresh the file '{}' failed.", ifile);
+            }
+        }
+
+        if (build) {
+            try {
+                project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+            } catch (final CoreException e) {
+                log.error("Built failed: {}", ifile, e);
+            }
+        }
+
+        if (validate) {
+            List<Map<String, Object>> results = Lists.newArrayList();
+
+            final List<IMarker> problems = Lists.newArrayList();
+
+            try {
+                ifile.accept(new IResourceVisitor() {
+
+                    @Override
+                    public boolean visit(final IResource resource)
+                            throws CoreException {
+                        return problems.addAll(Arrays.asList(ifile
+                                .findMarkers(IMarker.PROBLEM, true,
+                                        IResource.DEPTH_INFINITE)));
+                    }
+                }, 0, 0);
+            } catch (final CoreException ignore) {
+            }
+
+            if (null != problems) {
+                String fileName = ifile.getLocation().toOSString()
+                        .replace('\\', '/');
+
+                try {
+
+                    for (IMarker problem : problems) {
+                        final Map<String, Object> attributes = problem
+                                .getAttributes();
+                        int sourceStart = (Integer) attributes
+                                .get(IMarker.CHAR_START);
+                        int sourceEnd = (Integer) attributes
+                                .get(IMarker.CHAR_END);
+                        int sourceLineNumber = (Integer) attributes
+                                .get(IMarker.LINE_NUMBER);
+                        boolean isError = ((Integer) attributes
+                                .get(IMarker.SEVERITY)) == IMarker.SEVERITY_ERROR ? true
+                                : false;
+                        int[] pos = new FileObject(file)
+                                .getLineColumn(sourceStart);
+
+                        Map<String, Object> m = EclipseResourceUtil
+                                .wrapProblemAsMap((String) attributes
+                                        .get(IMarker.MESSAGE), sourceStart,
+                                        sourceEnd, fileName, sourceLineNumber,
+                                        pos[1], isError ? 2 : 1);
+                        if (null != m)
+                            results.add(m);
+                    }
+                } catch (final CoreException ignore) {
+                    ignore.printStackTrace();
+                }
+            }
+
+            resp.writeAsJson(results);
+            return;
+        }
 
         resp.writeAsJson(1);
     }
-
 }
 
 // vim:ft=java

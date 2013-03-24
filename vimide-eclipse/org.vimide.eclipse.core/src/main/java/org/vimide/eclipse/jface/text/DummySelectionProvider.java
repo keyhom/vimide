@@ -22,12 +22,58 @@
  */
 package org.vimide.eclipse.jface.text;
 
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
 
 /**
+ * Dummy ISelectionProvider implementation that provides basic functionality for
+ * eclipse classes that require an ITextViewer.
+ *
  * @author keyhom (keyhom.c@gmail.com)
  */
 public class DummySelectionProvider implements ISelectionProvider {
+
+    private ISelection selection;
+
+    /**
+     * Default constructor by the ISelection.
+     *
+     * @param selection the ISelection instance.
+     */
+    public DummySelectionProvider(ISelection selection) {
+        this.selection = selection;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addSelectionChangedListener(ISelectionChangedListener arg0) {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ISelection getSelection() {
+        return selection;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void removeSelectionChangedListener(ISelectionChangedListener arg0) {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setSelection(ISelection selection) {
+        this.selection = selection;
+    }
 
 }
 

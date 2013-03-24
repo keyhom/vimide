@@ -67,7 +67,8 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
   endif
 
   if a:findstart
-    write!
+    " write!
+    call vimide#lang#SilentUpdate()
 
     " locate the start of the word.
     let line = getline('.')
@@ -80,8 +81,8 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
 
     return start
   else
-    " call vimide#lang#SilentUpdate()
-    write!
+    call vimide#lang#SilentUpdate()
+    " write!
 
     let file = expand('%:p')
     let project = vimide#project#impl#GetProject()

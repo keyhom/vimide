@@ -41,6 +41,7 @@ public class EclipseProjectUtil {
      * @param project the specific project.
      * @return the line delimiter.
      */
+    @SuppressWarnings("deprecation")
     public static String getProjectLineDelimiter(IProject project) {
         IScopeContext[] scopeContext = null;
         if (null != project) {

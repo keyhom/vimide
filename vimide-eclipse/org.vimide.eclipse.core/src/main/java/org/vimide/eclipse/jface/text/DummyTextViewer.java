@@ -36,6 +36,7 @@ import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.IUndoManager;
 import org.eclipse.jface.text.IViewportListener;
 import org.eclipse.jface.text.TextPresentation;
+import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
@@ -47,10 +48,11 @@ import org.eclipse.swt.graphics.Point;
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
+@SuppressWarnings("deprecation")
 public class DummyTextViewer implements ITextViewer {
 
-    IDocument document;
-    ISelectionProvider selectionProvider;
+    private IDocument document;
+    private ISelectionProvider selectionProvider;
 
     /**
      * Default constructor.
@@ -63,8 +65,8 @@ public class DummyTextViewer implements ITextViewer {
         super();
 
         this.document = document;
-        // selectionProvider = new DummySelectionProvider(new
-        // TextSelection(document, offset, length));
+        selectionProvider = new DummySelectionProvider(new TextSelection(
+                document, offset, length));
     }
 
     @Override
@@ -109,7 +111,8 @@ public class DummyTextViewer implements ITextViewer {
 
     @Override
     public Point getSelectedRange() {
-        return new Point(-1, -1);
+        // return new Point(-1, -1);
+        return new Point(0, 0);
     }
 
     @Override

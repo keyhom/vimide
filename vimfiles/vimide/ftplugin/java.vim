@@ -67,7 +67,7 @@ if &ft == 'java'
   augroup vimide_java
     autocmd! BufWritePost <buffer>
     autocmd BufWritePost <buffer>
-          \ call vimide#lang#UpdateSrcFile('java', g:VIdeJavaValidate)
+          \ call vimide#lang#UpdateSrcFile('java', g:VIdeJavaValidate, 1)
   augroup end
 endif
 

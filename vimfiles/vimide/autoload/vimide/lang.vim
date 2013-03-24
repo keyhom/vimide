@@ -43,7 +43,7 @@ let s:command_update_src_file = "/<lang>UpdateSrcFile?project=<project>&file=<fi
 "   lang      - the specific lang of the src file.
 "   validate  - the specific flag of validate.
 " ----------------------------------------------------------------------------
-function! vimide#lang#UpdateSrcFile(lang, validate)
+function! vimide#lang#UpdateSrcFile(lang, validate, ...)
   let file = expand('%:p')
   let project = vimide#project#impl#GetProject(file)
   if '' != project
@@ -56,7 +56,15 @@ function! vimide#lang#UpdateSrcFile(lang, validate)
       let command .= '&validate=1'
       " if problem list wasn't empty and global prefered to update src file on
       " save.
-      if vimide#project#problem#IsNotEmpty() && g:VIdeProjectProblemsUpdateOnBuild
+      let build = vimide#project#problem#IsNotEmpty() && g:VIdeProjectProblemsUpdateOnBuild ? 1 : 0
+
+      if len(a:000) > 0 && a:0 == 0
+        let build = 0
+      elseif len(a:000) > 0 && a:0 == 1
+        let build = 1
+      endif
+
+      if build 
         let command .= '&build=1'
       endif
     endif
