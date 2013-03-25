@@ -30,6 +30,8 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.vimide.core.servlet.VimideHttpServlet;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 
@@ -104,7 +106,12 @@ public abstract class GenericVimideHttpServlet extends VimideHttpServlet {
     }
 
     protected IFile getProjectFile(IProject project, String filePath) {
-        return null;
+        if (null == project || !project.exists() || Strings.isNullOrEmpty(filePath)) {
+            return null;
+        }
+
+        IPath path = new Path(filePath).makeRelativeTo(project.getLocation());
+        return project.getFile(path);
     }
 
 }

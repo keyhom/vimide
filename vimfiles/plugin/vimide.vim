@@ -153,34 +153,26 @@ function! s:Init()
   runtime! vimide/after/plugin/*.vim
 endfunction
 
-" Do initialized.
-call <SID>Init()
-
 " ----------------------------------------------------------------------------
 "
 " Filetype Mapping:
 "
 " ---------------------------------------------------------------------------- 
 
-augroup Vimide_filetype
-  au!
+augroup filetypedetect
+  autocmd! BufRead *.as
   " enable the actionscript filetype mapping the as file by default.
   autocmd BufNewFile,BufRead,BufEnter *.as setf actionscript
 augroup END
 
 " ----------------------------------------------------------------------------
 "
-" Autocmd Declarations:
+" Shotcut Mapping:
 "
 " ----------------------------------------------------------------------------
-augroup Vimide_autocmd
-  au!
-  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>j :Comment<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>f :%Format<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <leader><leader><cr> :Correct<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>o :OrganizeImports<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <F3> :SearchContext<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <F4> :Hierarchy<cr>
+augroup vimide_shortcut
+  inoremap <A-.> <C-X><C-O>
+  inoremap <A-/> <C-X><C-U>
 augroup END
 
 " ----------------------------------------------------------------------------
@@ -192,5 +184,8 @@ augroup END
 if !exists(':VIde')
   command VIde :call <SID>Validate()
 endif
+
+" Do initialized. This block must remain in the last.
+call <SID>Init()
 
 " vim:ft=vim

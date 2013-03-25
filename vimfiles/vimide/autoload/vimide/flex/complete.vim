@@ -81,8 +81,8 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
 
     return start
   else
-    call vimide#lang#SilentUpdate()
-    " write!
+    " call vimide#lang#SilentUpdate()
+    write!
 
     let file = expand('%:p')
     let project = vimide#project#impl#GetProject()
@@ -113,7 +113,7 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
       return -1
     endif
 
-    if has_key(result, 'error') && len(result.completions) == 0
+    if has_key(result, 'error') && has_key(result, 'completions') && len(result.completions) == 0
       if type(result.error) == g:DICT_TYPE && has_key(result.error, 'message')
         call vimide#print#EchoError(result.error.message)
       endif
@@ -132,6 +132,10 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
 
     " when completing imports, the completions include ending ';'
     let semicolon = getline('.') =~ '\%' . col('.') . 'c\s*;'
+
+    if !has_key(result, 'completions')
+      return []
+    endif
 
     for entry in result.completions
       let word = entry.completion
@@ -157,18 +161,10 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
       let menu = entry.menu
       " wrap info from html to text.
       " let info = 
-      let info = menu
+      let info = entry.info
       let abbr = entry.abbreviation
 
-      let dict = {
-            \ 'word': word,
-            \ 'abbr': abbr,
-            \ 'menu': menu,
-            \ 'info': info,
-            \ 'kind': entry.type,
-            \ 'dup' : 0,
-            \ 'icase': !g:VIdeFlexCompleteCaseSensitive,
-            \ }
+      let dict = { 'word': word, 'abbr': abbr, 'menu': menu, 'info': info, 'kind': entry.type, 'dup' : 0, 'icase': !g:VIdeFlexCompleteCaseSensitive }
       call add(completions, dict)
     endfor
 

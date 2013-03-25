@@ -28,7 +28,9 @@ import org.slf4j.LoggerFactory;
 import org.vimide.core.server.VimideHttpServer;
 import org.vimide.eclipse.core.VimidePlugin;
 import org.vimide.eclipse.flashbuilder.servlet.CodeCompleteServlet;
+import org.vimide.eclipse.flashbuilder.servlet.CommentServlet;
 import org.vimide.eclipse.flashbuilder.servlet.FlexUpdateSrcServlet;
+import org.vimide.eclipse.flashbuilder.servlet.FormatServlet;
 import org.vimide.eclipse.flashbuilder.servlet.SdkListServlet;
 
 /**
@@ -79,6 +81,8 @@ public class VimideFbPlugin extends VimidePlugin {
                 FlexUpdateSrcServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 CodeCompleteServlet.class);
+        VimideHttpServer.getInstance().registerServlet(FormatServlet.class);
+        VimideHttpServer.getInstance().registerServlet(CommentServlet.class);
     }
 
 }

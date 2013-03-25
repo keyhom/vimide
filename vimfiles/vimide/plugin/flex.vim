@@ -20,16 +20,7 @@
 "   
 "     3. This notice may not be removed or altered from any source
 "     distribution.
-" 
-
-" ----------------------------------------------------------------------------
 "
-" Command Declartions:
-"
-" ----------------------------------------------------------------------------
-
-" JVMs:
-command! JVMs :call vimide#java#misc#ListInstallVMs()
 
 " ----------------------------------------------------------------------------
 "
@@ -37,13 +28,14 @@ command! JVMs :call vimide#java#misc#ListInstallVMs()
 "
 " ----------------------------------------------------------------------------
 augroup Vimide_autocmd
-  autocmd! FileType java
-  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>j :Comment<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>f :%Format<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <leader><leader><cr> :Correct<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <leader><leader>o :OrganizeImports<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <F3> :SearchContext<cr>
-  autocmd FileType java nnoremap <silent> <buffer> <F4> :Hierarchy<cr>
+  autocmd! FileType actionscript
+  autocmd FileType actionscript nnoremap <silent> <buffer> <leader><leader>j :Comment<cr>
+  autocmd FileType actionscript nnoremap <silent> <buffer> <leader><leader>f :%Format<cr>
+  autocmd FileType actionscript nnoremap <silent> <buffer> <leader><leader><cr> :Correct<cr>
+  autocmd FileType actionscript nnoremap <silent> <buffer> <leader><leader>o :OrganizeImports<cr>
+  autocmd FileType actionscript nnoremap <silent> <buffer> <F3> :SearchContext<cr>
+  autocmd FileType actionscript nnoremap <silent> <buffer> <F4> :Hierarchy<cr>
 augroup END
+
 
 " vim:ft=vim

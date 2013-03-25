@@ -83,4 +83,7 @@ command! -buffer Validate :call vimide#lang#UpdateSrcFile('flex', 1)
 " Format:
 command! -buffer -range Format :call vimide#flex#src#Format('<line1>', '<line2>')
 
+" Comment:
+command! -buffer Comment :call vimide#flex#src#Comment()
+
 " vim:ft=vim
