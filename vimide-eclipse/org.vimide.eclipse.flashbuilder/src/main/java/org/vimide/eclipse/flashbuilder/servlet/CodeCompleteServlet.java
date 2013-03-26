@@ -137,7 +137,7 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
                         @SuppressWarnings("unused")
                         String info = proposal.getAdditionalProposalInfo();
                         String abbreviation = null;
-                        String type = "?";
+                        String type = "x";
                         String replacementString = null;
 
                         if (proposal instanceof ActionScriptCompletionProposal) {

@@ -86,4 +86,7 @@ command! -buffer -range Format :call vimide#flex#src#Format('<line1>', '<line2>'
 " Comment:
 command! -buffer Comment :call vimide#flex#src#Comment()
 
+" OrganizeImports:
+command! -buffer OrganizeImports :call vimide#flex#src#OrganizeImports()
+
 " vim:ft=vim

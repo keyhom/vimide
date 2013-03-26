@@ -22,7 +22,6 @@
  */
 package org.vimide.eclipse.flashbuilder.servlet;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -33,13 +32,10 @@ import javax.servlet.annotation.WebServlet;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
@@ -70,38 +66,29 @@ public class FlexUpdateSrcServlet extends GenericVimideHttpServlet {
     protected void doGet(VimideHttpServletRequest req,
             VimideHttpServletResponse resp) throws ServletException,
             IOException {
-        final IProject project = getProject(req);
-        if (null == project || !project.exists()) {
+        final IFile ifile = getProjectFile(getProject(req), getFile(req)
+                .getAbsolutePath());
+
+        if (null == ifile || !ifile.exists()) {
             resp.sendError(403);
             return;
         }
-
-        final File file = getFile(req);
-        if (null == file || !file.exists()) {
-            resp.sendError(403);
-            return;
-        }
-
-        final IPath path = new Path(file.getAbsolutePath())
-                .makeRelativeTo(project.getLocation());
-        final IFile ifile = project.getFile(path);
 
         final boolean validate = req.getIntParameter("validate", 0) != 0 ? true
                 : false;
         final boolean build = req.getIntParameter("build", 0) != 0 ? true
                 : false;
 
-        if (null != ifile && ifile.exists()) {
-            try {
-                ifile.refreshLocal(IResource.DEPTH_INFINITE, null);
-            } catch (final CoreException e) {
-                log.error("Refresh the file '{}' failed.", ifile);
-            }
+        try {
+            ifile.refreshLocal(IResource.DEPTH_INFINITE, null);
+        } catch (final CoreException e) {
+            log.error("Refresh the file '{}' failed.", ifile);
         }
 
         if (build) {
             try {
-                project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+                ifile.getProject().build(
+                        IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
             } catch (final CoreException e) {
                 log.error("Built failed: {}", ifile, e);
             }
@@ -133,6 +120,7 @@ public class FlexUpdateSrcServlet extends GenericVimideHttpServlet {
                 try {
 
                     for (IMarker problem : problems) {
+                        @SuppressWarnings("unchecked")
                         final Map<String, Object> attributes = problem
                                 .getAttributes();
                         int sourceStart = (Integer) attributes
@@ -144,7 +132,7 @@ public class FlexUpdateSrcServlet extends GenericVimideHttpServlet {
                         boolean isError = ((Integer) attributes
                                 .get(IMarker.SEVERITY)) == IMarker.SEVERITY_ERROR ? true
                                 : false;
-                        int[] pos = new FileObject(file)
+                        int[] pos = new FileObject(ifile.getContents())
                                 .getLineColumn(sourceStart);
 
                         Map<String, Object> m = EclipseResourceUtil

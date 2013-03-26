@@ -81,8 +81,7 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
 
     return start
   else
-    " call vimide#lang#SilentUpdate()
-    write!
+    call vimide#lang#SilentUpdate()
 
     let file = expand('%:p')
     let project = vimide#project#impl#GetProject()

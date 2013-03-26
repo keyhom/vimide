@@ -108,4 +108,36 @@ function! vimide#flex#src#Comment()
 
 endfunction
 
+" ----------------------------------------------------------------------------
+" Organize imports by cleaning up.
+"
+" OrganizeImports:
+" ----------------------------------------------------------------------------
+function! vimide#flex#src#OrganizeImports(...)
+  if !vimide#project#impl#IsCurrentFileInProject()
+    return
+  endif
+
+  call vimide#print#Echo("Organizing imports...")
+
+  let file = vimide#lang#SilentUpdate()
+  let offset = vimide#util#GetCurrentElementOffset()
+  let project = vimide#project#impl#GetProject()
+
+  let command = s:command_organize_imports
+  let command = substitute(command, '<project>', project, '')
+  let command = substitute(command, '<file>', file, '')
+  let command = substitute(command, '<offset>', offset, '')
+
+  let result = vimide#Execute(command)
+
+  if '0' == result
+    call vimide#print#EchoError(command)
+  elseif '1' == result
+    call vimide#util#Reload({'retab': 1})
+    write!
+    call vimide#print#EchoInfo("Organized.")
+  endif
+endfunction
+
 " vim:ft=vim

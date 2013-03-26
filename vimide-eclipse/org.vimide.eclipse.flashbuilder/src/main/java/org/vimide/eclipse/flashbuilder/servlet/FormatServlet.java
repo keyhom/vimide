@@ -28,6 +28,7 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentRewriteSession;
 import org.eclipse.jface.text.DocumentRewriteSessionType;
@@ -40,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
+import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 import org.vimide.eclipse.jface.text.DummyTextViewer;
 
@@ -76,6 +78,20 @@ public class FormatServlet extends GenericVimideHttpServlet {
 
         int hOffset = req.getIntParameter("hoffset", 0);
         int tOffset = req.getIntParameter("toffset", 0);
+
+        try {
+            if (0 < hOffset) {
+                hOffset = new FileObject(file.getContents())
+                        .getCharLength(hOffset);
+            }
+
+            if (0 < tOffset) {
+                tOffset = new FileObject(file.getContents())
+                        .getCharLength(tOffset);
+            }
+        } catch (final CoreException e) {
+            log.error("", e.getLocalizedMessage(), e);
+        }
 
         try {
             format(file, hOffset, tOffset);

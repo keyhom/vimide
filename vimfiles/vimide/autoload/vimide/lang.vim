@@ -101,7 +101,7 @@ function! vimide#lang#SilentUpdate(...)
         " don't create temp files if no server if available to clean them up.
         let project = vimide#project#impl#GetProject(file)
       elseif a:0 < 2 || a:2
-        silent noautocmd update
+        silent noautocmd update!
       endif
     finally
       call setpos('.', pos)
