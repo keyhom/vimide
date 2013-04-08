@@ -79,12 +79,6 @@ public class FlexUpdateSrcServlet extends GenericVimideHttpServlet {
         final boolean build = req.getIntParameter("build", 0) != 0 ? true
                 : false;
 
-        try {
-            ifile.refreshLocal(IResource.DEPTH_INFINITE, null);
-        } catch (final CoreException e) {
-            log.error("Refresh the file '{}' failed.", ifile);
-        }
-
         if (build) {
             try {
                 ifile.getProject().build(

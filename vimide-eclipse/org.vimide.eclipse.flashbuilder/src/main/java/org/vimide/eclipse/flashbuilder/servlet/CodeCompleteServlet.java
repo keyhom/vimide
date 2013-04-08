@@ -33,12 +33,9 @@ import javax.servlet.annotation.WebServlet;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
-import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
+import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,10 +46,21 @@ import org.vimide.eclipse.core.complete.CodeCompletionResult;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 import org.vimide.eclipse.jface.text.DummyTextViewer;
 
+import com.adobe.flexbuilder.codemodel.common.CMFactory;
+import com.adobe.flexbuilder.codemodel.common.IImportTarget;
+import com.adobe.flexbuilder.codemodel.definitions.IDefinition;
+import com.adobe.flexbuilder.codemodel.definitions.IDefinitionLink;
+import com.adobe.flexbuilder.codemodel.internal.tree.IdentifierNode;
+import com.adobe.flexbuilder.codemodel.internal.tree.MemberAccessExpressionNode;
+import com.adobe.flexbuilder.codemodel.tree.ASOffsetInformation;
+import com.adobe.flexbuilder.codemodel.tree.IASNode;
+import com.adobe.flexbuilder.codemodel.tree.IMemberAccessExpressionNode;
 import com.adobe.flexide.as.core.ASCorePlugin;
+import com.adobe.flexide.as.core.IASDataProvider;
 import com.adobe.flexide.as.core.contentassist.ActionScriptCompletionProcessor;
 import com.adobe.flexide.as.core.contentassist.ActionScriptCompletionProposal;
 import com.adobe.flexide.editorcore.contentassist.FlexCompletionProposal;
+import com.adobe.flexide.editorcore.document.IFlexDocument;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -61,6 +69,7 @@ import com.google.common.collect.Maps;
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
+@SuppressWarnings("restriction")
 @WebServlet(urlPatterns = "/flexComplete")
 public class CodeCompleteServlet extends GenericVimideHttpServlet {
 
@@ -106,28 +115,85 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
         resp.writeAsJson(results);
     }
 
+    @SuppressWarnings("restriction")
     Object calculateCompletion(IProject project, File file, int offset)
             throws Exception {
-
         final List<CodeCompletionResult> results = Lists.newArrayList();
-
-        IPath filePath = new Path(file.getAbsolutePath());
-        IFile ifile = project.getFile(filePath.makeRelativeTo(project
-                .getLocation()));
-        if (null != ifile)
-            ifile.refreshLocal(IResource.DEPTH_INFINITE, null); // refresh the
-                                                                // buffer.
+        IFile ifile = getProjectFile(project, file.getAbsolutePath());
 
         ASCorePlugin corePlugin = ASCorePlugin.getDefault();
         IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
         // connects the file.
         documentProvider.connect(ifile);
         // retrieves the actionscript document.
-        IDocument document = documentProvider.getDocument(ifile);
+        IFlexDocument document = (IFlexDocument) documentProvider
+                .getDocument(ifile);
+        IASDataProvider dataProvider = null;
         try {
             if (null != document) {
+                ASOffsetInformation offsetInfo = null;
+                IASNode containingNode = null;
+
+                synchronized (CMFactory.getLockObject()) {
+                    if (document instanceof IASDataProvider) {
+                        dataProvider = (IASDataProvider) document;
+                    }
+
+                    if (null == dataProvider)
+                        return null;
+
+                    offsetInfo = dataProvider.getOffsetInformation(offset);
+                    if (null == offsetInfo)
+                        return null;
+                    containingNode = offsetInfo.getContainingNode();
+                }
+
+                if (null == containingNode)
+                    return null;
+
+                IDefinition definition = null;
+                IdentifierNode node = null;
+
+                if (!(containingNode instanceof MemberAccessExpressionNode)) {
+                    containingNode = containingNode
+                            .getAncestorOfType(IMemberAccessExpressionNode.class);
+                }
+
+                if (null != containingNode
+                        && containingNode instanceof MemberAccessExpressionNode) {
+                    node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
+                            .getLeft();
+                }
+
+                if (null != node) {
+                    // need imported.
+                    IImportTarget importTarget = CMFactory.getImportTargetFactory()
+                            .getImportTargetForQualifiedName(node.getName());
+                    if (CMFactory.getASIdentifierAnalyzer().isValidIdentifierName(node.getName())) {
+                        // System.out.println(offsetInfo.getDefinition()); 
+                        // offsetInfo.getDefinition(((BaseASModel)document).getBaseFileNode(), 1746)
+                        System.out.println(node.getAdapter(IDefinitionLink.class));
+                    }
+                }
+
+                // if (containingNode instanceof IdentifierNode) {
+                // containingNode = containingNode.getParent();
+                // }
+
+                // if (containingNode instanceof MemberAccessExpressionNode) {
+                // containingNode.getAncestorOfType(
+                // }
+
+                // if (null != definition) {
+                // ((IASModel)
+                // document).insertImport(definition.getQualifiedName(), 0);
+                // }
+
                 ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
                 ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
+                IContextInformation[] computeContextInformation = processor
+                        .computeContextInformation(textViewer, offset);
+                // processor.getProposalState()
                 if (processor.hasCompletionProposals(textViewer, offset)) {
                     ICompletionProposal[] proposals = processor
                             .computeCompletionProposals(textViewer, offset);

@@ -26,12 +26,20 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.filebuffers.ITextFileBuffer;
+import org.eclipse.core.filebuffers.ITextFileBufferManager;
+import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jface.text.IDocument;
 import org.vimide.core.servlet.VimideHttpServlet;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 
@@ -106,12 +114,60 @@ public abstract class GenericVimideHttpServlet extends VimideHttpServlet {
     }
 
     protected IFile getProjectFile(IProject project, String filePath) {
-        if (null == project || !project.exists() || Strings.isNullOrEmpty(filePath)) {
+        if (null == project || !project.exists()
+                || Strings.isNullOrEmpty(filePath)) {
             return null;
         }
 
         IPath path = new Path(filePath).makeRelativeTo(project.getLocation());
-        return project.getFile(path);
+        IFile ifile = project.getFile(path);
+        try {
+            ifile.refreshLocal(IResource.DEPTH_INFINITE, null);
+        } catch (final CoreException ignore) {
+        } finally {
+            try {
+                Thread.sleep(20L);
+            } catch (final Exception ignore) {
+            }
+        }
+        return ifile;
     }
 
+    /**
+     * Gets the document instance for the given file.
+     * <p/>
+     * Borrowed from org.eclipse.ant.internal.ui.AntUtil.
+     * 
+     * @param file the file.
+     * @return the document.
+     * @throws Exception
+     */
+    protected IDocument getDocument(IFile file) throws Exception {
+        ITextFileBufferManager manager = FileBuffers.getTextFileBufferManager();
+        IPath location = file.getLocation();
+        boolean connected = false;
+        try {
+            ITextFileBuffer buffer = manager.getTextFileBuffer(location,
+                    LocationKind.LOCATION);
+            if (null == buffer) {
+                // no existing file buffer..create one
+                manager.connect(location, LocationKind.LOCATION,
+                        new NullProgressMonitor());
+                connected = true;
+                buffer = manager.getTextFileBuffer(location,
+                        LocationKind.LOCATION);
+                if (null == buffer)
+                    return null;
+            }
+            return buffer.getDocument();
+        } finally {
+            if (connected) {
+                try {
+                    manager.disconnect(location, LocationKind.LOCATION,
+                            new NullProgressMonitor());
+                } catch (Exception ignore) {
+                }
+            }
+        }
+    }
 }

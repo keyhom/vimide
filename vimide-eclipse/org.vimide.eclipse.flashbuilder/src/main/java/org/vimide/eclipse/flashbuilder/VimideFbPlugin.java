@@ -35,6 +35,7 @@ import org.vimide.eclipse.flashbuilder.servlet.FormatServlet;
 import org.vimide.eclipse.flashbuilder.servlet.OrganizeImportsServlet;
 import org.vimide.eclipse.flashbuilder.servlet.OverrideImplServlet;
 import org.vimide.eclipse.flashbuilder.servlet.SdkListServlet;
+import org.vimide.eclipse.flashbuilder.servlet.SearchServlet;
 
 /**
  * Represents a eclipse plugin for flashbuilder extension of Vimide.
@@ -92,6 +93,7 @@ public class VimideFbPlugin extends VimidePlugin {
                 BlockCommentServlet.class);
         VimideHttpServer.getInstance().registerServlet(
                 OverrideImplServlet.class);
+        VimideHttpServer.getInstance().registerServlet(SearchServlet.class);
     }
 
 }
