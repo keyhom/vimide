@@ -1,13 +1,15 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Vendor: Keyhom's Labs
 Bundle-Name: Vimide JDT Plugin
 Bundle-SymbolicName: org.vimide.eclipse.jdt;singleton:=true
 Bundle-Version: 1.0.0.qualifier
+Bundle-ClassPath: .
 Bundle-Activator: org.vimide.eclipse.jdt.VimideJdtPlugin
+Bundle-Vendor: Keyhom's Labs
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
  org.eclipse.core.commands,
+ org.vimide.eclipse.core,
  org.eclipse.ui,
  org.eclipse.jdt,
  org.eclipse.jdt.core,
@@ -16,9 +18,6 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jdt.ui,
  org.eclipse.text,
  org.eclipse.jface.text,
- org.eclipse.ltk.core.refactoring,
- org.vimide.eclipse.core
-Export-Package: org.vimide.eclipse.jdt
+ org.eclipse.ltk.core.refactoring
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: .

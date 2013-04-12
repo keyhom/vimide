@@ -26,8 +26,8 @@
 
     <!-- defined for Maven. -->
     <maven.test.skip>true</maven.test.skip>
-    <!-- <eclipse-repository.url>http://download.eclipse.org/releases/indigo/</eclipse-repository.url> -->
-    <eclipse-repository.url>http://eclipse.7.com/releases/indigo/</eclipse-repository.url>
+    <eclipse-repository.url>http://download.eclipse.org/releases/indigo/</eclipse-repository.url>
+    <!-- <eclipse-repository.url>http://eclipse.7.com/releases/indigo/</eclipse-repository.url> -->
   </properties>
 
   <repositories>
