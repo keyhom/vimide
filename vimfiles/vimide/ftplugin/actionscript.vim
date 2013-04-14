@@ -30,7 +30,7 @@
 setlocal tw=80
 setlocal sw=4
 setlocal sw=4
-setlocal ci
+setlocal cindent
 setlocal syntax=java
 
 if !exists('g:VIdeASValidate')
@@ -88,5 +88,8 @@ command! -buffer Comment :call vimide#flex#src#Comment()
 
 " OrganizeImports:
 command! -buffer OrganizeImports :call vimide#flex#src#OrganizeImports()
+
+" Import:
+command! -buffer Import :call vimide#flex#src#Import()
 
 " vim:ft=vim

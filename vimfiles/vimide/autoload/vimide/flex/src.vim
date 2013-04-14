@@ -109,6 +109,75 @@ function! vimide#flex#src#Comment()
 endfunction
 
 " ----------------------------------------------------------------------------
+" Imports the current element.
+"
+" Import:
+"   [types] 
+" ----------------------------------------------------------------------------
+function! vimide#flex#src#Import(...)
+  if !vimide#project#impl#IsCurrentFileInProject()
+    return
+  endif
+
+  if !a:0
+    let name = expand('<cword>')
+    if !vimide#flex#util#IsValidIdentifier(name) || vimide#flex#util#IsKeyword(name)
+      call vimide#print#EchoError("'" . name . "' not a class name.")
+      return
+    endif
+  endif
+
+  let offset = vimide#util#GetOffset()
+  let project = vimide#project#impl#GetProject()
+  let file = expand('%:p')
+
+  let command = s:command_import
+  let command = substitute(command, '<project>', project, '')
+  let command = substitute(command, '<file>', vimide#util#LegalPath(file, 2), '')
+  let command = substitute(command, '<offset>', offset, '')
+
+  if a:0
+    let command .= '&type=' . a:1
+  endif
+
+  let result = vimide#Execute(command)
+
+  if type(result) == g:STRING_TYPE
+    call vimide#print#EchoError(result)
+    return
+  endif
+
+  if type(result) == g:DICT_TYPE
+    call vimide#util#Reload({'pos': [result.line, result.col]})
+    call vimide#lang#SilentUpdate('flex', 1)
+    if result.offset != offset
+      call vimide#print#Echo('Imported ' . (a:0 ? a:1 : ''))
+    endif
+    return
+  endif
+
+  let choice = vimide#flex#src#ImportPrompt(result)
+  if choice != ''
+    call vimide#flex#src#Import(choice)
+  endif
+endfunction
+
+" ----------------------------------------------------------------------------
+" Prompts the user to choose the class to import.
+"
+" ImportPrompt:
+"   choices - the list to choose.
+" ----------------------------------------------------------------------------
+function! vimide#flex#src#ImportPrompt(choices)
+  let response = vimide#util#PromptList("Choose the class to import", a:choices)
+  if response == -1
+    return ''
+  endif
+
+  return get(a:choices, response)
+endfunction
+
+" ----------------------------------------------------------------------------
 " Organize imports by cleaning up.
 "
 " OrganizeImports:

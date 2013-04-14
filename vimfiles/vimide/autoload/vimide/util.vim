@@ -586,19 +586,20 @@ endfunction
 "   [highlight] - 
 " ----------------------------------------------------------------------------
 function! vimide#util#PromptList(prompt, list, ...)
+  let o = a:list
   " no elements, no prompt
-  if empty(a:list)
+  if empty(o)
     return -1
   endif
 
   " only one element, on need to choose.
-  if len(a:list) == 1
+  if len(o) == 1
     return 0
   endif
 
   let prompt = ""
   let index = 0
-  for item in a:list
+  for item in o
     let prompt = prompt . index . ") " . item . "\n"
     let index = index + 1
   endfor
@@ -619,9 +620,9 @@ function! vimide#util#PromptList(prompt, list, ...)
 
     while response !~ '\(^$\|^[0-9]\+$\)' || 
           \ response < 0 ||
-          \ response > (len(a:list) - 1)
+          \ response > (len(o) - 1)
       let response = input("You must choose a value between " . 
-            \ 0 . " and " . (len(a:list) - 1) . ". (Ctrl-C to Cancel): ")
+            \ 0 . " and " . (len(o) - 1) . ". (Ctrl-C to Cancel): ")
     endwhile
   finally
     echohl None

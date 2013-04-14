@@ -87,6 +87,9 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
             if (null != documentProvider) {
 
                 try {
+                    // connects the file.
+                    documentProvider.connect(file);
+
                     doc = (IFlexDocument) documentProvider.getDocument(file);
                     DocumentRewriteSession session = doc
                             .startRewriteSession(DocumentRewriteSessionType.SEQUENTIAL);

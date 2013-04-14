@@ -186,7 +186,8 @@ public class JavaCorrectService extends JavaBaseService {
      * @return a list of ChangeCorrectionProposal.
      * @throws Exception
      */
-    protected List<IJavaCompletionProposal> getProposals(ICompilationUnit src,
+    @SuppressWarnings("unchecked")
+	protected List<IJavaCompletionProposal> getProposals(ICompilationUnit src,
             IProblem problem) throws Exception {
         IProject project = src.getJavaProject().getProject();
         List<IJavaCompletionProposal> results = Lists.newArrayList();

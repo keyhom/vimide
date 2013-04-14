@@ -171,5 +171,25 @@ function! vimide#flex#complete#CodeComplete(findstart, base)
   endif
 endfunction
 
+" ----------------------------------------------------------------------------
+" Called by CodeComplete when the completion depends on a missing import.
+"
+" ImportThenComplete:
+"   choices - the choices for importing.
+" ----------------------------------------------------------------------------
+function! vimide#flex#complete#ImportThenComplete(choices)
+  let choice = ''
+  if len(a:choices) > 0
+    let choice = vimide#flex#src#ImportPrompt(a:choices)
+  elseif len(a:choices)
+    let choice = a:choices[0]
+  endif
+
+  if choice != ''
+    call vimide#flex#src#Import(choice)
+    call feedkeys("\<c-x>\<c-u>", 'tn')
+  endif
+  return ''
+endfunction
 
 " vim:ft=vim

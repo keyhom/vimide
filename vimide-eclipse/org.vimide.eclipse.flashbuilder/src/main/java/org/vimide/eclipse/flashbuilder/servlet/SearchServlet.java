@@ -23,24 +23,22 @@
 package org.vimide.eclipse.flashbuilder.servlet;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 
-import com.adobe.flexbuilder.codemodel.common.CMFactory;
-import com.adobe.flexbuilder.codemodel.definitions.IDefinitionLink;
 import com.adobe.flexbuilder.codemodel.search.SearchScope;
 import com.adobe.flexbuilder.codemodel.search.SearchScope.SearchContext;
-import com.adobe.flexide.as.core.document.IASModel;
-import com.adobe.flexide.as.core.lookup.LookupManager;
+import com.adobe.flexide.as.core.ASCorePlugin;
 import com.adobe.flexide.editorcore.document.IFlexDocument;
 
 /**
@@ -83,7 +81,7 @@ public class SearchServlet extends GenericVimideHttpServlet {
         String pattern = req.getNotNullParameter("pattern");
 
         try {
-            List<Object> matches = collectMatches(file, offset, length,
+            Collection<?> matches = collectMatches(file, offset, length,
                     caseSensitive, type, scope, pattern);
 
             resp.writeAsJson(matches);
@@ -92,32 +90,51 @@ public class SearchServlet extends GenericVimideHttpServlet {
         }
     }
 
-    protected List<Object> collectMatches(IFile file, int offset, int length,
+    protected Collection<?> collectMatches(IFile file, int offset, int length,
             boolean caseSensitive, String type, String scope, String pat)
             throws Exception {
 
         if (null == file)
             return null;
 
-        int context = -1;
-        SearchScope searchScope = SearchScope.createProjectScope(file
-                .getLocation());
-        SearchContext searchContext = searchScope.getContext();
-        IFlexDocument document = (IFlexDocument) getDocument(file);
+        // Retrieves document by ASCore.
+        ASCorePlugin corePlugin = ASCorePlugin.getDefault();
+        IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
+        documentProvider.connect(file);
+        IFlexDocument document = (IFlexDocument) documentProvider
+                .getDocument(file);
 
-        if (null != document) {
-            synchronized (CMFactory.getLockObject()) {
-                IDefinitionLink link = LookupManager.Instance()
-                        .getDefinitionLink((IASModel) document, offset);
-                if (null != link) {
-                    System.out.println(link.resolveLink());
-                }
+        try {
+            int context = -1;
+            SearchScope searchScope = SearchScope.createProjectScope(file
+                    .getLocation());
+            SearchContext searchContext = searchScope.getContext();
+
+            // if (null != definition) {
+            // boolean imported = false;
+            // List<String> allImports = ((IASModel) document)
+            // .getAllImports(offset);
+            // for (String importedType : allImports) {
+            // if (importedType.equals(definition
+            // .getDefinitionQualifiedName())) {
+            // imported = true;
+            // }
+            // }
+
+            // if (!imported) {
+            // ((IASModel) document).createImportElement().setImportName(
+            // definition.getDefinitionQualifiedName());
+            // }
+            // }
+
+            return null;
+        } finally {
+            if (null != document) {
+                document = null;
+                documentProvider.disconnect(file);
             }
         }
-
-        return null;
     }
-
 }
 
 // vim:ft=java

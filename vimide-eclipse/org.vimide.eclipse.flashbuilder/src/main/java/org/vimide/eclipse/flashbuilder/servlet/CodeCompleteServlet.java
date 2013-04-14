@@ -22,20 +22,19 @@
  */
 package org.vimide.eclipse.flashbuilder.servlet;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
-import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +43,12 @@ import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.complete.CodeCompletionResult;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
+import org.vimide.eclipse.flashbuilder.complete.CodeCompletionResponse;
+import org.vimide.eclipse.flashbuilder.search.SearchManager;
 import org.vimide.eclipse.jface.text.DummyTextViewer;
 
 import com.adobe.flexbuilder.codemodel.common.CMFactory;
-import com.adobe.flexbuilder.codemodel.common.IImportTarget;
 import com.adobe.flexbuilder.codemodel.definitions.IDefinition;
-import com.adobe.flexbuilder.codemodel.definitions.IDefinitionLink;
 import com.adobe.flexbuilder.codemodel.internal.tree.IdentifierNode;
 import com.adobe.flexbuilder.codemodel.internal.tree.MemberAccessExpressionNode;
 import com.adobe.flexbuilder.codemodel.tree.ASOffsetInformation;
@@ -59,8 +58,10 @@ import com.adobe.flexide.as.core.ASCorePlugin;
 import com.adobe.flexide.as.core.IASDataProvider;
 import com.adobe.flexide.as.core.contentassist.ActionScriptCompletionProcessor;
 import com.adobe.flexide.as.core.contentassist.ActionScriptCompletionProposal;
+import com.adobe.flexide.as.core.document.IASModel;
 import com.adobe.flexide.editorcore.contentassist.FlexCompletionProposal;
 import com.adobe.flexide.editorcore.document.IFlexDocument;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -73,178 +74,340 @@ import com.google.common.collect.Maps;
 @WebServlet(urlPatterns = "/flexComplete")
 public class CodeCompleteServlet extends GenericVimideHttpServlet {
 
-    private static final long serialVersionUID = 1L;
-    static final Logger log = LoggerFactory.getLogger(CodeCompleteServlet.class
-            .getName());
+	private static final long serialVersionUID = 1L;
+	static final Logger log = LoggerFactory.getLogger(CodeCompleteServlet.class
+			.getName());
 
-    @Override
-    protected void doGet(VimideHttpServletRequest req,
-            VimideHttpServletResponse resp) throws ServletException,
-            IOException {
-        final IProject project = getProject(req);
-        if (null == project || !project.exists()) {
-            resp.sendError(403);
-            return;
-        }
+	@Override
+	protected void doGet(VimideHttpServletRequest req,
+			VimideHttpServletResponse resp) throws ServletException,
+			IOException {
+		final IFile file = getProjectFile(getProject(req), getFile(req)
+				.getAbsolutePath());
 
-        final File file = getFile(req);
-        if (null == file || !file.exists()) {
-            resp.sendError(403);
-            return;
-        }
+		if (null == file) {
+			resp.sendError(404);
+			return;
+		}
 
-        int offset = req.getIntParameter("offset", 0);
-        if (0 < offset) {
-            offset = new FileObject(file).getCharLength(offset);
-        }
+		int offset = req.getIntParameter("offset", 0);
+		if (0 < offset) {
+			try {
+				offset = new FileObject(file.getContents())
+						.getCharLength(offset);
+			} catch (CoreException ignore) {
+			}
+		}
 
-        // String layout = req.getParameter("layout");
+		// String layout = req.getParameter("layout");
 
-        Map<String, Object> results = Maps.newHashMap();
+		CodeCompletionResponse response = null;
+		List<String> imports = null;
 
-        try {
-            results.put("error", "");
-            results.put("imports", "");
-            results.put("completions",
-                    calculateCompletion(project, file, offset));
+		try {
+			imports = isNeedImport(file, offset);
+			if (null != imports && !imports.isEmpty()) {
+				response = new CodeCompletionResponse(null, null, imports);
+			} else {
+				List<CodeCompletionResult> result = calculateCompletion(file,
+						offset);
+				// if (null == result || result.isEmpty()) {
+				// // collection import
+				// Collection<IDefinition> definitions = getImports(file,
+				// offset);
+				// if (null != definitions && !definitions.isEmpty()) {
+				// imports = Lists.newArrayList();
+				// for (IDefinition def : definitions) {
+				// imports.add(def.getQualifiedName());
+				// }
+				// }
+				// }
 
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
+				response = new CodeCompletionResponse(result, null, imports);
+			}
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
 
-        resp.writeAsJson(results);
-    }
+		resp.writeAsJson(null != response ? response.toMap() : Maps
+				.newHashMap());
+	}
 
-    @SuppressWarnings("restriction")
-    Object calculateCompletion(IProject project, File file, int offset)
-            throws Exception {
-        final List<CodeCompletionResult> results = Lists.newArrayList();
-        IFile ifile = getProjectFile(project, file.getAbsolutePath());
+	List<String> isNeedImport(IFile file, int offset) throws Exception {
+		if (null != file) {
 
-        ASCorePlugin corePlugin = ASCorePlugin.getDefault();
-        IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
-        // connects the file.
-        documentProvider.connect(ifile);
-        // retrieves the actionscript document.
-        IFlexDocument document = (IFlexDocument) documentProvider
-                .getDocument(ifile);
-        IASDataProvider dataProvider = null;
-        try {
-            if (null != document) {
-                ASOffsetInformation offsetInfo = null;
-                IASNode containingNode = null;
+			List<String> results = Lists.newArrayList();
 
-                synchronized (CMFactory.getLockObject()) {
-                    if (document instanceof IASDataProvider) {
-                        dataProvider = (IASDataProvider) document;
-                    }
+			ASCorePlugin corePlugin = ASCorePlugin.getDefault();
+			IDocumentProvider documentProvider = corePlugin
+					.getDocumentProvider();
+			// connects the file.
+			documentProvider.connect(file);
+			// retrieves the actionscript document.
+			IFlexDocument document = (IFlexDocument) documentProvider
+					.getDocument(file);
 
-                    if (null == dataProvider)
-                        return null;
+			ASOffsetInformation offsetInfo = null;
+			IASNode containingNode = null;
+			IASDataProvider dataProvider = null;
+			IdentifierNode node = null;
 
-                    offsetInfo = dataProvider.getOffsetInformation(offset);
-                    if (null == offsetInfo)
-                        return null;
-                    containingNode = offsetInfo.getContainingNode();
-                }
+			try {
+				synchronized (CMFactory.getLockObject()) {
+					if (document instanceof IASDataProvider) {
+						dataProvider = (IASDataProvider) document;
+					}
 
-                if (null == containingNode)
-                    return null;
+					if (null == dataProvider)
+						return null;
 
-                IDefinition definition = null;
-                IdentifierNode node = null;
+					offsetInfo = dataProvider.getOffsetInformation(offset);
+					if (null == offsetInfo)
+						return null;
+					containingNode = offsetInfo.getContainingNode();
+				}
 
-                if (!(containingNode instanceof MemberAccessExpressionNode)) {
-                    containingNode = containingNode
-                            .getAncestorOfType(IMemberAccessExpressionNode.class);
-                }
+				if (null == containingNode)
+					return null;
 
-                if (null != containingNode
-                        && containingNode instanceof MemberAccessExpressionNode) {
-                    node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
-                            .getLeft();
-                }
+				if (!(containingNode instanceof MemberAccessExpressionNode)) {
+					containingNode = containingNode
+							.getAncestorOfType(IMemberAccessExpressionNode.class);
+				}
 
-                if (null != node) {
-                    // need imported.
-                    IImportTarget importTarget = CMFactory.getImportTargetFactory()
-                            .getImportTargetForQualifiedName(node.getName());
-                    if (CMFactory.getASIdentifierAnalyzer().isValidIdentifierName(node.getName())) {
-                        // System.out.println(offsetInfo.getDefinition()); 
-                        // offsetInfo.getDefinition(((BaseASModel)document).getBaseFileNode(), 1746)
-                        System.out.println(node.getAdapter(IDefinitionLink.class));
-                    }
-                }
+				if (null != containingNode
+						&& containingNode instanceof MemberAccessExpressionNode) {
+					if (((MemberAccessExpressionNode) containingNode).getLeft() instanceof IdentifierNode) {
+						node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
+								.getLeft();
+					}
+				}
 
-                // if (containingNode instanceof IdentifierNode) {
-                // containingNode = containingNode.getParent();
-                // }
+				if (null != node) {
+					// definition found, check if imported needed.
+					offset = node.getEnd() - 1;
+					// get completions.
+					ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
+					ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
+					List<String> allImports = ((IASModel) document)
+							.getAllImports(offset);
 
-                // if (containingNode instanceof MemberAccessExpressionNode) {
-                // containingNode.getAncestorOfType(
-                // }
+					// IContextInformation[] computeContextInformation =
+					// processor
+					// .computeContextInformation(textViewer, offset);
+					// processor.getProposalState()
+					if (processor.hasCompletionProposals(textViewer, offset)) {
+						ICompletionProposal[] proposals = processor
+								.computeCompletionProposals(textViewer, offset);
+						for (ICompletionProposal proposal : proposals) {
+							if (proposal instanceof FlexCompletionProposal) {
+								ActionScriptCompletionProposal lazy = (ActionScriptCompletionProposal) proposal;
+								if (lazy.getReplacementString().equals(
+										node.getName())) {
+									Field addImport = ActionScriptCompletionProposal.class
+											.getDeclaredField("fAddImport");
+									boolean accessibleFlag = addImport
+											.isAccessible();
+									addImport.setAccessible(true);
+									boolean importing = addImport
+											.getBoolean(lazy);
+									addImport.setAccessible(accessibleFlag);
 
-                // if (null != definition) {
-                // ((IASModel)
-                // document).insertImport(definition.getQualifiedName(), 0);
-                // }
+									if (importing) {
+										boolean isImported = false;
+										for (String imprt : allImports) {
+											if (imprt.equals(lazy
+													.getQualifiedName())) {
+												isImported = true;
+											}
+										}
 
-                ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
-                ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
-                IContextInformation[] computeContextInformation = processor
-                        .computeContextInformation(textViewer, offset);
-                // processor.getProposalState()
-                if (processor.hasCompletionProposals(textViewer, offset)) {
-                    ICompletionProposal[] proposals = processor
-                            .computeCompletionProposals(textViewer, offset);
-                    for (ICompletionProposal proposal : proposals) {
-                        String completion = null;
-                        String menu = proposal.getDisplayString();
-                        @SuppressWarnings("unused")
-                        String info = proposal.getAdditionalProposalInfo();
-                        String abbreviation = null;
-                        String type = "x";
-                        String replacementString = null;
+										if (!isImported) {
+											if (!Strings.isNullOrEmpty(lazy.getQualifiedName())) {
+												results.add(lazy.getQualifiedName());	
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 
-                        if (proposal instanceof ActionScriptCompletionProposal) {
-                            ActionScriptCompletionProposal lazy = (ActionScriptCompletionProposal) proposal;
-                            abbreviation = lazy.getName();
-                            menu = lazy.getStyledDisplayString().toString();
-                            replacementString = lazy.getReplacementString();
-                        } else if (proposal instanceof FlexCompletionProposal) {
-                            FlexCompletionProposal lazy = (FlexCompletionProposal) proposal;
-                            abbreviation = lazy.getName();
-                            menu = lazy.getDisplayString();
-                            replacementString = lazy.getReplacementString();
-                        }
+					return results;
+				}
 
-                        Field fReplacementLength = FlexCompletionProposal.class
-                                .getDeclaredField("fReplacementLength");
-                        boolean accessibleFlag = fReplacementLength
-                                .isAccessible();
-                        fReplacementLength.setAccessible(true);
-                        int replacementLength = fReplacementLength
-                                .getInt(proposal);
-                        fReplacementLength.setAccessible(accessibleFlag);
-                        completion = replacementString
-                                .substring(replacementLength);
+			} finally {
+				if (null != document) {
+					document = null;
+					documentProvider.disconnect(file);
+				}
+			}
+		}
 
-                        // results.add(new CodeCompletionResult(completion,
-                        // abbreviation, menu, Strings.isNullOrEmpty(info) ?
-                        // menu : info, type));
-                        results.add(new CodeCompletionResult(completion,
-                                abbreviation, menu, menu, type));
-                    }
-                }
-            }
-        } finally {
-            if (null != document) {
-                document = null;
-                documentProvider.disconnect(ifile);
-            }
-        }
-        return results;
-    }
+		return null;
+	}
+
+	Collection<IDefinition> getImports(IFile file, int offset) throws Exception {
+		ASCorePlugin corePlugin = ASCorePlugin.getDefault();
+		IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
+		// connects the file.
+		documentProvider.connect(file);
+		// retrieves the actionscript document.
+		IFlexDocument document = (IFlexDocument) documentProvider
+				.getDocument(file);
+
+		Collection<IDefinition> results = Lists.newArrayList();
+		ASOffsetInformation offsetInfo = null;
+		IASNode containingNode = null;
+		IASDataProvider dataProvider = null;
+
+		try {
+
+			synchronized (CMFactory.getLockObject()) {
+				if (document instanceof IASDataProvider) {
+					dataProvider = (IASDataProvider) document;
+				}
+
+				if (null == dataProvider)
+					return null;
+
+				offsetInfo = dataProvider.getOffsetInformation(offset);
+				if (null == offsetInfo)
+					return null;
+				containingNode = offsetInfo.getContainingNode();
+			}
+
+			if (null == containingNode)
+				return null;
+
+			IdentifierNode node = null;
+
+			if (!(containingNode instanceof MemberAccessExpressionNode)) {
+				containingNode = containingNode
+						.getAncestorOfType(IMemberAccessExpressionNode.class);
+			}
+
+			if (null != containingNode
+					&& containingNode instanceof MemberAccessExpressionNode) {
+				node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
+						.getLeft();
+			}
+
+			if (null != node) {
+				// need imported.
+				Set<IDefinition> definitions = SearchManager.getInstance()
+						.getDefinitions(document, offset, node.getName());
+				if (null != definitions && !definitions.isEmpty()) {
+					return definitions;
+				}
+				// IImportTarget importTarget =
+				// CMFactory.getImportTargetFactory()
+				// .getImportTargetForQualifiedName(node.getName());
+				// if
+				// (CMFactory.getASIdentifierAnalyzer().isValidIdentifierName(
+				// node.getName())) {
+				// System.out.println(importTarget.getTargetName());
+				// }
+			}
+
+			// if (containingNode instanceof IdentifierNode) {
+			// containingNode = containingNode.getParent();
+			// }
+
+			// if (containingNode instanceof MemberAccessExpressionNode)
+			// {
+			// containingNode.getAncestorOfType(
+			// }
+
+			// if (null != definition) {
+			// ((IASModel)
+			// document).insertImport(definition.getQualifiedName(), 0);
+			// }
+
+		} finally {
+			if (null != document) {
+				document = null;
+				documentProvider.disconnect(file);
+			}
+		}
+		return results;
+	}
+
+	List<CodeCompletionResult> calculateCompletion(IFile file, int offset)
+			throws Exception {
+		final List<CodeCompletionResult> results = Lists.newArrayList();
+
+		ASCorePlugin corePlugin = ASCorePlugin.getDefault();
+		IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
+		// connects the file.
+		documentProvider.connect(file);
+		// retrieves the actionscript document.
+		IFlexDocument document = (IFlexDocument) documentProvider
+				.getDocument(file);
+		try {
+			if (null != document) {
+
+				ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
+				ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
+				// IContextInformation[] computeContextInformation = processor
+				// .computeContextInformation(textViewer, offset);
+				// processor.getProposalState()
+				if (processor.hasCompletionProposals(textViewer, offset)) {
+					ICompletionProposal[] proposals = processor
+							.computeCompletionProposals(textViewer, offset);
+					for (ICompletionProposal proposal : proposals) {
+						String completion = null;
+						String menu = proposal.getDisplayString();
+						@SuppressWarnings("unused")
+						String info = proposal.getAdditionalProposalInfo();
+						String abbreviation = null;
+						String type = "x";
+						String replacementString = null;
+
+						if (proposal instanceof ActionScriptCompletionProposal) {
+							ActionScriptCompletionProposal lazy = (ActionScriptCompletionProposal) proposal;
+							abbreviation = lazy.getName();
+							menu = lazy.getStyledDisplayString().toString();
+							replacementString = lazy.getReplacementString();
+						} else if (proposal instanceof FlexCompletionProposal) {
+							FlexCompletionProposal lazy = (FlexCompletionProposal) proposal;
+							abbreviation = lazy.getName();
+							menu = lazy.getDisplayString();
+							replacementString = lazy.getReplacementString();
+						}
+
+						Field fReplacementOffset = FlexCompletionProposal.class
+								.getDeclaredField("fReplacementOffset");
+						boolean accessibleFlag = fReplacementOffset
+								.isAccessible();
+						fReplacementOffset.setAccessible(true);
+						int replacementOffset = fReplacementOffset
+								.getInt(proposal);
+						fReplacementOffset.setAccessible(accessibleFlag);
+
+						int replacementLength = offset - replacementOffset;
+
+						completion = replacementString
+								.substring(replacementLength);
+
+						// results.add(new CodeCompletionResult(completion,
+						// abbreviation, menu, Strings.isNullOrEmpty(info) ?
+						// menu : info, type));
+						results.add(new CodeCompletionResult(completion,
+								abbreviation, menu, menu, type));
+					}
+				}
+
+			}
+		} finally {
+			if (null != document) {
+				document = null;
+				documentProvider.disconnect(file);
+			}
+		}
+		return results;
+	}
+
 }
 
 // vim:ft=java
