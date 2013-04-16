@@ -117,7 +117,9 @@ public class ImportServlet extends GenericVimideHttpServlet {
 					documentProvider.disconnect(file);
 				}
 			}
-		}
+		} else {
+
+        }
 
 		return Position.fromOffset(file.getLocation().toOSString(), null,
 				offset + typeName.length() + 10, 0);
