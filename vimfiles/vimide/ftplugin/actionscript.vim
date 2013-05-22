@@ -31,7 +31,6 @@ setlocal tw=80
 setlocal sw=4
 setlocal sw=4
 setlocal cindent
-setlocal syntax=java
 
 if !exists('g:VIdeASValidate')
   let g:VIdeASValidate = 1
