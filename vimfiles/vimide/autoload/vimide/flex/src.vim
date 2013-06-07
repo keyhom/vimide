@@ -140,6 +140,8 @@ function! vimide#flex#src#Import(...)
     let command .= '&type=' . a:1
   endif
 
+  echo command
+
   let result = vimide#Execute(command)
 
   if type(result) == g:STRING_TYPE

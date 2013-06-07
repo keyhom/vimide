@@ -62,7 +62,7 @@ endif
 "
 " ----------------------------------------------------------------------------
 
-if &ft == 'actionscript'
+if &ft == 'actionscript' || &ft == 'as3'
   augroup vimide_actionscript
     autocmd! BufWritePost <buffer>
     autocmd BufWritePost <buffer>

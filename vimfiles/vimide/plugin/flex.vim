@@ -35,6 +35,14 @@ augroup Vimide_autocmd
   autocmd FileType actionscript nnoremap <silent> <buffer> <leader><leader>o :OrganizeImports<cr>
   autocmd FileType actionscript nnoremap <silent> <buffer> <F3> :SearchContext<cr>
   autocmd FileType actionscript nnoremap <silent> <buffer> <F4> :Hierarchy<cr>
+
+  autocmd! FileType as3
+  autocmd FileType as3 nnoremap <silent> <buffer> <leader><leader>j :Comment<cr>
+  autocmd FileType as3 nnoremap <silent> <buffer> <leader><leader>f :%Format<cr>
+  autocmd FileType as3 nnoremap <silent> <buffer> <leader><leader><cr> :Correct<cr>
+  autocmd FileType as3 nnoremap <silent> <buffer> <leader><leader>o :OrganizeImports<cr>
+  autocmd FileType as3 nnoremap <silent> <buffer> <F3> :SearchContext<cr>
+  autocmd FileType as3 nnoremap <silent> <buffer> <F4> :Hierarchy<cr>
 augroup END
 
 

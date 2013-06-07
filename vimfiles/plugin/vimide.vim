@@ -174,6 +174,7 @@ augroup END
 augroup vimide_shortcut
   inoremap <A-.> <C-X><C-O>
   inoremap <A-/> <C-X><C-U>
+  inoremap <C-SPACE> <C-X><C-U>
 augroup END
 
 " ----------------------------------------------------------------------------
