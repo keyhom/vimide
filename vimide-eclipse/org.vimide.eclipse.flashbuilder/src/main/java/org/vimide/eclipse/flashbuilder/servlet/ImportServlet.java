@@ -109,6 +109,9 @@ public class ImportServlet extends GenericVimideHttpServlet {
 		}
 	}
 
+	/**
+	 * @private
+	 */
 	protected Object importType(IFile file, int offset, String typeName)
 			throws Exception {
 		// Determines whether the typeName suppling null was.
@@ -176,15 +179,19 @@ public class ImportServlet extends GenericVimideHttpServlet {
 					}
 				}
 
-				if (null != importName && importName.length == 1) {
-					((IASModel) document).insertImport(importName[0], offset);
-					return Position.fromOffset(file.getLocation().toOSString(),
-							null, offset + typeName.length() + 10, 0);
-				} else {
+				if (null != importName && importName.length > 1) {
 					return importName;
+				} else {
+                    int resultOffset = offset;
+					if (null != importName && importName.length == 1) {
+						((IASModel) document).insertImport(importName[0],
+								offset);
+						((IASModel) document).organizeImports(false);
+                        resultOffset = offset + typeName.length() + 10;
+					}
+					return Position.fromOffset(file.getLocation().toOSString(),
+							null, resultOffset, 0);
 				}
-				// ((IASModel) document).insertImport(typeName, offset);
-				// ((IASModel) document).organizeImports(false);
 			}
 		} finally {
 			if (document.isDirty()) {
@@ -197,7 +204,7 @@ public class ImportServlet extends GenericVimideHttpServlet {
 				documentProvider.disconnect(file);
 			}
 		}
-        
+
 		return null;
 	}
 
@@ -292,7 +299,10 @@ public class ImportServlet extends GenericVimideHttpServlet {
 				}
 			}
 		}
-		return new String[] { resultImport };
+
+		if (null != resultImport)
+			return new String[] { resultImport };
+		return null;
 	}
 
 	/**

@@ -138,9 +138,10 @@ function! vimide#flex#src#Import(...)
 
   if a:0
     let command .= '&type=' . a:1
+  else
+    " Update the src file now.
+    call vimide#lang#SilentUpdate()
   endif
-
-  echo command
 
   let result = vimide#Execute(command)
 
@@ -151,7 +152,7 @@ function! vimide#flex#src#Import(...)
 
   if type(result) == g:DICT_TYPE
     call vimide#util#Reload({'pos': [result.line, result.col]})
-    call vimide#lang#SilentUpdate('flex', 1)
+    call vimide#lang#UpdateSrcFile('flex', 1)
     if result.offset != offset
       call vimide#print#Echo('Imported ' . (a:0 ? a:1 : ''))
     endif

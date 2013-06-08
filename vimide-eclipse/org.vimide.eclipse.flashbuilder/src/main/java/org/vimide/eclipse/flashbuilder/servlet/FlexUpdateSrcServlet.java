@@ -68,8 +68,8 @@ public class FlexUpdateSrcServlet extends GenericVimideHttpServlet {
             IOException {
         final IFile ifile = getProjectFile(getProject(req), getFile(req)
                 .getAbsolutePath());
-
-        if (null == ifile || !ifile.exists()) {
+        
+        if (null == ifile) {
             resp.sendError(403);
             return;
         }

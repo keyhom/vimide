@@ -26,6 +26,7 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import org.apache.commons.exec.OS;
 import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.filebuffers.ITextFileBuffer;
 import org.eclipse.core.filebuffers.ITextFileBufferManager;
@@ -67,6 +68,10 @@ public abstract class GenericVimideHttpServlet extends VimideHttpServlet {
     protected File getFile(VimideHttpServletRequest req) {
         String reqFile = req.getNotNullParameter(REQ_FILE);
         if (!reqFile.isEmpty()) {
+            if (OS.isFamilyWindows()) {
+                // Corrects the CaseSenstive for vim/gvim supplied directories
+                // path.
+            }
             return new File(reqFile);
         }
         return null;
@@ -122,7 +127,7 @@ public abstract class GenericVimideHttpServlet extends VimideHttpServlet {
         IPath path = new Path(filePath).makeRelativeTo(project.getLocation());
         IFile ifile = project.getFile(path);
         try {
-            ifile.refreshLocal(IResource.DEPTH_INFINITE, null);
+            ifile.refreshLocal(IResource.DEPTH_ONE, null);
         } catch (final CoreException ignore) {
         } finally {
             try {
