@@ -71,6 +71,7 @@ public class FormatServlet extends GenericVimideHttpServlet {
             IOException {
         final IFile file = getProjectFile(getProject(req), getFile(req)
                 .getAbsolutePath());
+        
         if (null == file) {
             resp.sendError(403);
             return;
@@ -120,7 +121,7 @@ public class FormatServlet extends GenericVimideHttpServlet {
             doc = (IFlexDocument) documentProvider.getDocument(file);
             session = doc
                     .startRewriteSession(DocumentRewriteSessionType.SEQUENTIAL);
-
+            
             DummyTextViewer viewer = new DummyTextViewer(doc, startOffset,
                     endOffset);
             ITextSelection selection = (ITextSelection) viewer

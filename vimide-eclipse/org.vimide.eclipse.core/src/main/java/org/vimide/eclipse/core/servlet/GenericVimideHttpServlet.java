@@ -54,125 +54,152 @@ import com.google.common.collect.Lists;
  */
 public abstract class GenericVimideHttpServlet extends VimideHttpServlet {
 
-    private static final long serialVersionUID = 1L;
-    private static final String REQ_PROJECT = "project";
-    private static final String REQ_FILE = "file";
+	private static final long serialVersionUID = 1L;
+	private static final String REQ_PROJECT = "project";
+	private static final String REQ_FILE = "file";
 
-    protected String getOSEncoding() {
-        String encoding = System.getProperty("sun.jnu.encoding");
-        if (Strings.isNullOrEmpty(encoding))
-            encoding = Charset.defaultCharset().name();
-        return encoding;
-    }
+	protected String getOSEncoding() {
+		String encoding = System.getProperty("sun.jnu.encoding");
+		if (Strings.isNullOrEmpty(encoding))
+			encoding = Charset.defaultCharset().name();
+		return encoding;
+	}
 
-    protected File getFile(VimideHttpServletRequest req) {
-        String reqFile = req.getNotNullParameter(REQ_FILE);
-        if (!reqFile.isEmpty()) {
-            if (OS.isFamilyWindows()) {
-                // Corrects the CaseSenstive for vim/gvim supplied directories
-                // path.
-            }
-            return new File(reqFile);
-        }
-        return null;
-    }
+	protected File getFile(VimideHttpServletRequest req) {
+		String reqFile = req.getNotNullParameter(REQ_FILE);
+		if (!reqFile.isEmpty()) {
+			if (OS.isFamilyWindows()) {
+				// Corrects the CaseSenstive for vim/gvim supplied directories
+				// path.
+			}
+			return new File(reqFile);
+		}
+		return null;
+	}
 
-    protected File[] getFiles(VimideHttpServletRequest req) {
-        String[] reqFiles = req.getNotNullParameterValues(REQ_FILE);
-        List<File> files = null;
-        if (null != reqFiles && reqFiles.length > 0) {
-            files = Lists.newArrayList();
-            for (String reqFile : reqFiles) {
-                files.add(new File(reqFile));
-            }
-        }
-        return null == files ? null : files.toArray(new File[files.size()]);
-    }
+	protected File[] getFiles(VimideHttpServletRequest req) {
+		String[] reqFiles = req.getNotNullParameterValues(REQ_FILE);
+		List<File> files = null;
+		if (null != reqFiles && reqFiles.length > 0) {
+			files = Lists.newArrayList();
+			for (String reqFile : reqFiles) {
+				files.add(new File(reqFile));
+			}
+		}
+		return null == files ? null : files.toArray(new File[files.size()]);
+	}
 
-    protected IProject getProject(VimideHttpServletRequest req) {
-        String reqProject = req.getNotNullParameter(REQ_PROJECT);
-        if (!reqProject.isEmpty()) {
-            return getWorkspace().getRoot().getProject(reqProject);
-        }
-        return null;
-    }
+	protected IProject getProject(VimideHttpServletRequest req) {
+		String reqProject = req.getNotNullParameter(REQ_PROJECT);
+		if (!reqProject.isEmpty()) {
+			return getWorkspace().getRoot().getProject(reqProject);
+		}
+		return null;
+	}
 
-    protected IProject[] getProjects(VimideHttpServletRequest req) {
-        List<IProject> projects = null;
-        String[] values = req.getNotNullParameterValues(REQ_PROJECT);
-        if (null != values && values.length > 0) {
-            projects = Lists.newArrayList();
-            for (String value : values) {
-                projects.add(getWorkspace().getRoot().getProject(value));
-            }
-        }
-        return null == projects ? null : projects.toArray(new IProject[projects
-                .size()]);
-    }
+	protected IProject[] getProjects(VimideHttpServletRequest req) {
+		List<IProject> projects = null;
+		String[] values = req.getNotNullParameterValues(REQ_PROJECT);
+		if (null != values && values.length > 0) {
+			projects = Lists.newArrayList();
+			for (String value : values) {
+				projects.add(getWorkspace().getRoot().getProject(value));
+			}
+		}
+		return null == projects ? null : projects.toArray(new IProject[projects
+				.size()]);
+	}
 
-    protected IProject[] getProjects() {
-        return getWorkspace().getRoot().getProjects();
-    }
+	protected IProject[] getProjects() {
+		return getWorkspace().getRoot().getProjects();
+	}
 
-    protected IWorkspace getWorkspace() {
-        return ResourcesPlugin.getWorkspace();
-    }
+	protected IWorkspace getWorkspace() {
+		return ResourcesPlugin.getWorkspace();
+	}
 
-    protected IFile getProjectFile(IProject project, String filePath) {
-        if (null == project || !project.exists()
-                || Strings.isNullOrEmpty(filePath)) {
-            return null;
-        }
+	protected IFile getProjectFile(IProject project, String filePath,
+			Boolean refresh) {
+		if (null == project || !project.exists()
+				|| Strings.isNullOrEmpty(filePath)) {
+			return null;
+		}
 
-        IPath path = new Path(filePath).makeRelativeTo(project.getLocation());
-        IFile ifile = project.getFile(path);
-        try {
-            ifile.refreshLocal(IResource.DEPTH_ONE, null);
-        } catch (final CoreException ignore) {
-        } finally {
-            try {
-                Thread.sleep(20L);
-            } catch (final Exception ignore) {
-            }
-        }
-        return ifile;
-    }
+		IPath path = new Path(filePath).makeRelativeTo(project.getLocation());
+		IFile ifile = project.getFile(path);
 
-    /**
-     * Gets the document instance for the given file.
-     * <p/>
-     * Borrowed from org.eclipse.ant.internal.ui.AntUtil.
-     * 
-     * @param file the file.
-     * @return the document.
-     * @throws Exception
-     */
-    protected IDocument getDocument(IFile file) throws Exception {
-        ITextFileBufferManager manager = FileBuffers.getTextFileBufferManager();
-        IPath location = file.getLocation();
-        boolean connected = false;
-        try {
-            ITextFileBuffer buffer = manager.getTextFileBuffer(location,
-                    LocationKind.LOCATION);
-            if (null == buffer) {
-                // no existing file buffer..create one
-                manager.connect(location, LocationKind.LOCATION,
-                        new NullProgressMonitor());
-                connected = true;
-                buffer = manager.getTextFileBuffer(location,
-                        LocationKind.LOCATION);
-                if (null == buffer)
-                    return null;
-            }
-            return buffer.getDocument();
-        } finally {
-            if (connected) {
-                try {
-                    manager.disconnect(location, LocationKind.LOCATION,
-                            new NullProgressMonitor());
-                } catch (Exception ignore) {
-                }
-            }
-        }
-    }
+		if (refresh) {
+			try {
+				int depth = IResource.DEPTH_ZERO;
+				if (!ifile.isSynchronized(IResource.DEPTH_ZERO)) {
+					depth = IResource.DEPTH_ZERO;
+				} else if (!ifile.isSynchronized(IResource.DEPTH_ONE)) {
+					depth = IResource.DEPTH_ONE;
+				} else if (!ifile.isSynchronized(IResource.DEPTH_INFINITE)) {
+					depth = IResource.DEPTH_INFINITE;
+				} else
+					return ifile;
+
+				IResource targetRes = ifile;
+				targetRes.refreshLocal(depth, null);
+				targetRes = targetRes.getParent();
+
+				while (targetRes != null) {
+					targetRes.refreshLocal(0, null);
+					targetRes = targetRes.getParent();
+				}
+                
+				try {
+					Thread.sleep(0L);
+				} catch (final Exception ignore) {
+				}
+			} catch (final CoreException ignore) {
+			} finally {
+			}
+		}
+		return ifile;
+	}
+
+	protected IFile getProjectFile(IProject project, String filePath) {
+		return getProjectFile(project, filePath, true);
+	}
+
+	/**
+	 * Gets the document instance for the given file.
+	 * <p/>
+	 * Borrowed from org.eclipse.ant.internal.ui.AntUtil.
+	 * 
+	 * @param file
+	 *            the file.
+	 * @return the document.
+	 * @throws Exception
+	 */
+	protected IDocument getDocument(IFile file) throws Exception {
+		ITextFileBufferManager manager = FileBuffers.getTextFileBufferManager();
+		IPath location = file.getLocation();
+		boolean connected = false;
+		try {
+			ITextFileBuffer buffer = manager.getTextFileBuffer(location,
+					LocationKind.LOCATION);
+			if (null == buffer) {
+				// no existing file buffer..create one
+				manager.connect(location, LocationKind.LOCATION,
+						new NullProgressMonitor());
+				connected = true;
+				buffer = manager.getTextFileBuffer(location,
+						LocationKind.LOCATION);
+				if (null == buffer)
+					return null;
+			}
+			return buffer.getDocument();
+		} finally {
+			if (connected) {
+				try {
+					manager.disconnect(location, LocationKind.LOCATION,
+							new NullProgressMonitor());
+				} catch (Exception ignore) {
+				}
+			}
+		}
+	}
 }

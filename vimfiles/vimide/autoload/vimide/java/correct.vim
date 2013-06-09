@@ -58,7 +58,7 @@ function! vimide#java#correct#Correct()
     return
   endif
 
-  call vimide#lang#SilentUpdate()
+  call vimide#lang#SilentUpdate('java', 0)
 
   let project = vimide#project#impl#GetProject()
   let file = expand('%:p')

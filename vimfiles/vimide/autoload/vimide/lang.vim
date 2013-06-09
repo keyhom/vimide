@@ -23,6 +23,16 @@
 "
 
 " ----------------------------------------------------------------------------
+" 
+" Globals Variables:
+" 
+" ----------------------------------------------------------------------------
+
+if !exists('g:VIdeSilentRemoteUpdate')
+  let g:VIdeSilentRemoteUpdate = 1
+endif
+
+" ----------------------------------------------------------------------------
 "
 " Script Variables:
 "
@@ -102,6 +112,59 @@ function! vimide#lang#SilentUpdate(...)
         let project = vimide#project#impl#GetProject(file)
       elseif a:0 < 2 || a:2
         silent noautocmd update!
+      endif
+    finally
+      call setpos('.', pos)
+    endtry
+  endif
+  return vimide#util#LegalPath(file, 2)
+endfunction
+
+" ----------------------------------------------------------------------------
+" Silently updates the current source file w/out validation.
+"
+" SilentRemoteUpdate: 
+"   [lang]
+"   [validate]
+"   [temp]
+"   [temp_write]
+" ----------------------------------------------------------------------------
+function! vimide#lang#SilentRemoteUpdate(lang, validate, ...)
+  let pos = getpos('.')
+  let file = expand('%:p')
+  if file != ''
+    try 
+      if a:0 && a:1
+        " don't create temp files if no server if available to clean them up.
+        let project = vimide#project#impl#GetProject(file)
+      elseif a:0 < 2 || a:2
+        silent noautocmd update!
+        call vimide#lang#UpdateSrcFile(a:lang, a:validate)
+      endif
+    finally
+      call setpos('.', pos)
+    endtry
+  endif
+  return vimide#util#LegalPath(file, 2)
+endfunction
+
+" ----------------------------------------------------------------------------
+" Silently writes the current source file w/out validation.
+"
+" SilentWrite:
+"   [temp]
+"   [temp_write]
+" ----------------------------------------------------------------------------
+function! vimide#lang#SilentWrite(...)
+  let pos = getpos('.')
+  let file = expand('%:p')
+  if file != ''
+    try 
+      if a:0 && a:1
+        " don't create temp files if no server if available to clean them up.
+        let project = vimide#project#impl#GetProject(file)
+      elseif a:0 < 2 || a:2
+        silent noautocmd write!
       endif
     finally
       call setpos('.', pos)

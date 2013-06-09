@@ -54,7 +54,7 @@ function! vimide#flex#src#Format(first, last)
   call vimide#print#Echo("Formatting...")
 
   " silent updated.
-  let file = vimide#lang#SilentUpdate()
+  let file = vimide#lang#SilentRemoteUpdate('flex', 0)
   let project = vimide#project#impl#GetProject()
 
   let command = s:command_format
@@ -87,7 +87,7 @@ function! vimide#flex#src#Comment()
 
   call vimide#print#Echo('Generating...')
 
-  let file = vimide#lang#SilentUpdate()
+  let file = vimide#lang#SilentRemoteUpdate('flex', 0)
   let offset = vimide#util#GetCurrentElementOffset()
   let project = vimide#project#impl#GetProject()
 
@@ -140,7 +140,7 @@ function! vimide#flex#src#Import(...)
     let command .= '&type=' . a:1
   else
     " Update the src file now.
-    call vimide#lang#SilentUpdate()
+    call vimide#lang#SilentRemoteUpdate('flex', 0)
   endif
 
   let result = vimide#Execute(command)
@@ -152,10 +152,11 @@ function! vimide#flex#src#Import(...)
 
   if type(result) == g:DICT_TYPE
     call vimide#util#Reload({'pos': [result.line, result.col]})
-    call vimide#lang#UpdateSrcFile('flex', 1)
     if result.offset != offset
       call vimide#print#Echo('Imported ' . (a:0 ? a:1 : ''))
     endif
+    " call vimide#lang#SilentRemoteUpdate('flex', 1)
+    write
     return
   endif
 
@@ -192,7 +193,7 @@ function! vimide#flex#src#OrganizeImports(...)
 
   call vimide#print#Echo("Organizing imports...")
 
-  let file = vimide#lang#SilentUpdate()
+  let file = vimide#lang#SilentRemoteUpdate('flex', 0)
   let offset = vimide#util#GetCurrentElementOffset()
   let project = vimide#project#impl#GetProject()
 

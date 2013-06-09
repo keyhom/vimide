@@ -74,339 +74,341 @@ import com.google.common.collect.Maps;
 @WebServlet(urlPatterns = "/flexComplete")
 public class CodeCompleteServlet extends GenericVimideHttpServlet {
 
-	private static final long serialVersionUID = 1L;
-	static final Logger log = LoggerFactory.getLogger(CodeCompleteServlet.class
-			.getName());
+    private static final long serialVersionUID = 1L;
+    static final Logger log = LoggerFactory.getLogger(CodeCompleteServlet.class
+            .getName());
 
-	@Override
-	protected void doGet(VimideHttpServletRequest req,
-			VimideHttpServletResponse resp) throws ServletException,
-			IOException {
-		final IFile file = getProjectFile(getProject(req), getFile(req)
-				.getAbsolutePath());
+    @Override
+    protected void doGet(VimideHttpServletRequest req,
+            VimideHttpServletResponse resp) throws ServletException,
+            IOException {
+        final IFile file = getProjectFile(getProject(req), getFile(req)
+                .getAbsolutePath());
 
-		if (null == file) {
-			resp.sendError(404);
-			return;
-		}
+        if (null == file) {
+            resp.sendError(404);
+            return;
+        }
 
-		int offset = req.getIntParameter("offset", 0);
-		if (0 < offset) {
-			try {
-				offset = new FileObject(file.getContents())
-						.getCharLength(offset);
-			} catch (CoreException ignore) {
-			}
-		}
+        int offset = req.getIntParameter("offset", 0);
+        if (0 < offset) {
+            try {
+                offset = new FileObject(file.getContents())
+                        .getCharLength(offset);
+            } catch (CoreException ignore) {
+            }
+        }
 
-		// String layout = req.getParameter("layout");
+        // String layout = req.getParameter("layout");
 
-		CodeCompletionResponse response = null;
-		List<String> imports = null;
+        CodeCompletionResponse response = null;
+        List<String> imports = null;
 
-		try {
-			imports = isNeedImport(file, offset);
-			if (null != imports && !imports.isEmpty()) {
-				response = new CodeCompletionResponse(null, null, imports);
-			} else {
-				List<CodeCompletionResult> result = calculateCompletion(file,
-						offset);
-				// if (null == result || result.isEmpty()) {
-				// // collection import
-				// Collection<IDefinition> definitions = getImports(file,
-				// offset);
-				// if (null != definitions && !definitions.isEmpty()) {
-				// imports = Lists.newArrayList();
-				// for (IDefinition def : definitions) {
-				// imports.add(def.getQualifiedName());
-				// }
-				// }
-				// }
+        try {
+            imports = isNeedImport(file, offset);
+            if (null != imports && !imports.isEmpty()) {
+                response = new CodeCompletionResponse(null, null, imports);
+            } else {
+                List<CodeCompletionResult> result = calculateCompletion(file,
+                        offset);
+                // if (null == result || result.isEmpty()) {
+                // // collection import
+                // Collection<IDefinition> definitions = getImports(file,
+                // offset);
+                // if (null != definitions && !definitions.isEmpty()) {
+                // imports = Lists.newArrayList();
+                // for (IDefinition def : definitions) {
+                // imports.add(def.getQualifiedName());
+                // }
+                // }
+                // }
 
-				response = new CodeCompletionResponse(result, null, imports);
-			}
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
+                response = new CodeCompletionResponse(result, null, imports);
+            }
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
 
-		resp.writeAsJson(null != response ? response.toMap() : Maps
-				.newHashMap());
-	}
+        resp.writeAsJson(null != response ? response.toMap() : Maps
+                .newHashMap());
+    }
 
-	List<String> isNeedImport(IFile file, int offset) throws Exception {
-		if (null != file) {
+    List<String> isNeedImport(IFile file, int offset) throws Exception {
+        if (null != file) {
 
-			List<String> results = Lists.newArrayList();
+            List<String> results = Lists.newArrayList();
 
-			ASCorePlugin corePlugin = ASCorePlugin.getDefault();
-			IDocumentProvider documentProvider = corePlugin
-					.getDocumentProvider();
-			// connects the file.
-			documentProvider.connect(file);
-			// retrieves the actionscript document.
-			IFlexDocument document = (IFlexDocument) documentProvider
-					.getDocument(file);
+            ASCorePlugin corePlugin = ASCorePlugin.getDefault();
+            IDocumentProvider documentProvider = corePlugin
+                    .getDocumentProvider();
+            // connects the file.
+            documentProvider.connect(file);
+            // retrieves the actionscript document.
+            IFlexDocument document = (IFlexDocument) documentProvider
+                    .getDocument(file);
 
-			ASOffsetInformation offsetInfo = null;
-			IASNode containingNode = null;
-			IASDataProvider dataProvider = null;
-			IdentifierNode node = null;
+            ASOffsetInformation offsetInfo = null;
+            IASNode containingNode = null;
+            IASDataProvider dataProvider = null;
+            IdentifierNode node = null;
 
-			try {
-				synchronized (CMFactory.getLockObject()) {
-					if (document instanceof IASDataProvider) {
-						dataProvider = (IASDataProvider) document;
-					}
+            try {
+                synchronized (CMFactory.getLockObject()) {
+                    if (document instanceof IASDataProvider) {
+                        dataProvider = (IASDataProvider) document;
+                    }
 
-					if (null == dataProvider)
-						return null;
+                    if (null == dataProvider)
+                        return null;
 
-					offsetInfo = dataProvider.getOffsetInformation(offset);
-					if (null == offsetInfo)
-						return null;
-					containingNode = offsetInfo.getContainingNode();
-				}
+                    offsetInfo = dataProvider.getOffsetInformation(offset);
+                    if (null == offsetInfo)
+                        return null;
+                    containingNode = offsetInfo.getContainingNode();
+                }
 
-				if (null == containingNode)
-					return null;
+                if (null == containingNode)
+                    return null;
 
-				if (!(containingNode instanceof MemberAccessExpressionNode)) {
-					containingNode = containingNode
-							.getAncestorOfType(IMemberAccessExpressionNode.class);
-				}
+                if (!(containingNode instanceof MemberAccessExpressionNode)) {
+                    containingNode = containingNode
+                            .getAncestorOfType(IMemberAccessExpressionNode.class);
+                }
 
-				if (null != containingNode
-						&& containingNode instanceof MemberAccessExpressionNode) {
-					if (((MemberAccessExpressionNode) containingNode).getLeft() instanceof IdentifierNode) {
-						node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
-								.getLeft();
-					}
-				}
+                if (null != containingNode
+                        && containingNode instanceof MemberAccessExpressionNode) {
+                    if (((MemberAccessExpressionNode) containingNode).getLeft() instanceof IdentifierNode) {
+                        node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
+                                .getLeft();
+                    }
+                }
 
-				if (null != node) {
-					// definition found, check if imported needed.
-					offset = node.getEnd() - 1;
-					// get completions.
-					ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
-					ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
-					List<String> allImports = ((IASModel) document)
-							.getAllImports(offset);
+                if (null != node) {
+                    // definition found, check if imported needed.
+                    offset = node.getEnd() - 1;
+                    // get completions.
+                    ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
+                    ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
+                    List<String> allImports = ((IASModel) document)
+                            .getAllImports(offset);
 
-					// IContextInformation[] computeContextInformation =
-					// processor
-					// .computeContextInformation(textViewer, offset);
-					// processor.getProposalState()
-					if (processor.hasCompletionProposals(textViewer, offset)) {
-						ICompletionProposal[] proposals = processor
-								.computeCompletionProposals(textViewer, offset);
-						for (ICompletionProposal proposal : proposals) {
-							if (proposal instanceof FlexCompletionProposal) {
-								ActionScriptCompletionProposal lazy = (ActionScriptCompletionProposal) proposal;
-								if (lazy.getReplacementString().equals(
-										node.getName())) {
-									Field addImport = ActionScriptCompletionProposal.class
-											.getDeclaredField("fAddImport");
-									boolean accessibleFlag = addImport
-											.isAccessible();
-									addImport.setAccessible(true);
-									boolean importing = addImport
-											.getBoolean(lazy);
-									addImport.setAccessible(accessibleFlag);
+                    // IContextInformation[] computeContextInformation =
+                    // processor
+                    // .computeContextInformation(textViewer, offset);
+                    // processor.getProposalState()
+                    if (processor.hasCompletionProposals(textViewer, offset)) {
+                        ICompletionProposal[] proposals = processor
+                                .computeCompletionProposals(textViewer, offset);
+                        for (ICompletionProposal proposal : proposals) {
+                            if (proposal instanceof FlexCompletionProposal) {
+                                ActionScriptCompletionProposal lazy = (ActionScriptCompletionProposal) proposal;
+                                if (lazy.getReplacementString().equals(
+                                        node.getName())) {
+                                    Field addImport = ActionScriptCompletionProposal.class
+                                            .getDeclaredField("fAddImport");
+                                    boolean accessibleFlag = addImport
+                                            .isAccessible();
+                                    addImport.setAccessible(true);
+                                    boolean importing = addImport
+                                            .getBoolean(lazy);
+                                    addImport.setAccessible(accessibleFlag);
 
-									if (importing) {
-										boolean isImported = false;
-										for (String imprt : allImports) {
-											if (imprt.equals(lazy
-													.getQualifiedName())) {
-												isImported = true;
-											}
-										}
+                                    if (importing) {
+                                        boolean isImported = false;
+                                        for (String imprt : allImports) {
+                                            if (imprt.equals(lazy
+                                                    .getQualifiedName())) {
+                                                isImported = true;
+                                            }
+                                        }
 
-										if (!isImported) {
-											if (!Strings.isNullOrEmpty(lazy.getQualifiedName())) {
-												results.add(lazy.getQualifiedName());	
-											}
-										}
-									}
-								}
-							}
-						}
-					}
+                                        if (!isImported) {
+                                            if (!Strings.isNullOrEmpty(lazy
+                                                    .getQualifiedName())) {
+                                                results.add(lazy
+                                                        .getQualifiedName());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-					return results;
-				}
+                    return results;
+                }
 
-			} finally {
-				if (null != document) {
-					document = null;
-					documentProvider.disconnect(file);
-				}
-			}
-		}
+            } finally {
+                if (null != document) {
+                    document = null;
+                    documentProvider.disconnect(file);
+                }
+            }
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	Collection<IDefinition> getImports(IFile file, int offset) throws Exception {
-		ASCorePlugin corePlugin = ASCorePlugin.getDefault();
-		IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
-		// connects the file.
-		documentProvider.connect(file);
-		// retrieves the actionscript document.
-		IFlexDocument document = (IFlexDocument) documentProvider
-				.getDocument(file);
+    Collection<IDefinition> getImports(IFile file, int offset) throws Exception {
+        ASCorePlugin corePlugin = ASCorePlugin.getDefault();
+        IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
+        // connects the file.
+        documentProvider.connect(file);
+        // retrieves the actionscript document.
+        IFlexDocument document = (IFlexDocument) documentProvider
+                .getDocument(file);
 
-		Collection<IDefinition> results = Lists.newArrayList();
-		ASOffsetInformation offsetInfo = null;
-		IASNode containingNode = null;
-		IASDataProvider dataProvider = null;
+        Collection<IDefinition> results = Lists.newArrayList();
+        ASOffsetInformation offsetInfo = null;
+        IASNode containingNode = null;
+        IASDataProvider dataProvider = null;
 
-		try {
+        try {
 
-			synchronized (CMFactory.getLockObject()) {
-				if (document instanceof IASDataProvider) {
-					dataProvider = (IASDataProvider) document;
-				}
+            synchronized (CMFactory.getLockObject()) {
+                if (document instanceof IASDataProvider) {
+                    dataProvider = (IASDataProvider) document;
+                }
 
-				if (null == dataProvider)
-					return null;
+                if (null == dataProvider)
+                    return null;
 
-				offsetInfo = dataProvider.getOffsetInformation(offset);
-				if (null == offsetInfo)
-					return null;
-				containingNode = offsetInfo.getContainingNode();
-			}
+                offsetInfo = dataProvider.getOffsetInformation(offset);
+                if (null == offsetInfo)
+                    return null;
+                containingNode = offsetInfo.getContainingNode();
+            }
 
-			if (null == containingNode)
-				return null;
+            if (null == containingNode)
+                return null;
 
-			IdentifierNode node = null;
+            IdentifierNode node = null;
 
-			if (!(containingNode instanceof MemberAccessExpressionNode)) {
-				containingNode = containingNode
-						.getAncestorOfType(IMemberAccessExpressionNode.class);
-			}
+            if (!(containingNode instanceof MemberAccessExpressionNode)) {
+                containingNode = containingNode
+                        .getAncestorOfType(IMemberAccessExpressionNode.class);
+            }
 
-			if (null != containingNode
-					&& containingNode instanceof MemberAccessExpressionNode) {
-				node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
-						.getLeft();
-			}
+            if (null != containingNode
+                    && containingNode instanceof MemberAccessExpressionNode) {
+                node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
+                        .getLeft();
+            }
 
-			if (null != node) {
-				// need imported.
-				Set<IDefinition> definitions = SearchManager.getInstance()
-						.getDefinitions(document, offset, node.getName());
-				if (null != definitions && !definitions.isEmpty()) {
-					return definitions;
-				}
-				// IImportTarget importTarget =
-				// CMFactory.getImportTargetFactory()
-				// .getImportTargetForQualifiedName(node.getName());
-				// if
-				// (CMFactory.getASIdentifierAnalyzer().isValidIdentifierName(
-				// node.getName())) {
-				// System.out.println(importTarget.getTargetName());
-				// }
-			}
+            if (null != node) {
+                // need imported.
+                Set<IDefinition> definitions = SearchManager.getInstance()
+                        .getDefinitions(document, offset, node.getName());
+                if (null != definitions && !definitions.isEmpty()) {
+                    return definitions;
+                }
+                // IImportTarget importTarget =
+                // CMFactory.getImportTargetFactory()
+                // .getImportTargetForQualifiedName(node.getName());
+                // if
+                // (CMFactory.getASIdentifierAnalyzer().isValidIdentifierName(
+                // node.getName())) {
+                // System.out.println(importTarget.getTargetName());
+                // }
+            }
 
-			// if (containingNode instanceof IdentifierNode) {
-			// containingNode = containingNode.getParent();
-			// }
+            // if (containingNode instanceof IdentifierNode) {
+            // containingNode = containingNode.getParent();
+            // }
 
-			// if (containingNode instanceof MemberAccessExpressionNode)
-			// {
-			// containingNode.getAncestorOfType(
-			// }
+            // if (containingNode instanceof MemberAccessExpressionNode)
+            // {
+            // containingNode.getAncestorOfType(
+            // }
 
-			// if (null != definition) {
-			// ((IASModel)
-			// document).insertImport(definition.getQualifiedName(), 0);
-			// }
+            // if (null != definition) {
+            // ((IASModel)
+            // document).insertImport(definition.getQualifiedName(), 0);
+            // }
 
-		} finally {
-			if (null != document) {
-				document = null;
-				documentProvider.disconnect(file);
-			}
-		}
-		return results;
-	}
+        } finally {
+            if (null != document) {
+                document = null;
+                documentProvider.disconnect(file);
+            }
+        }
+        return results;
+    }
 
-	List<CodeCompletionResult> calculateCompletion(IFile file, int offset)
-			throws Exception {
-		final List<CodeCompletionResult> results = Lists.newArrayList();
+    List<CodeCompletionResult> calculateCompletion(IFile file, int offset)
+            throws Exception {
+        final List<CodeCompletionResult> results = Lists.newArrayList();
 
-		ASCorePlugin corePlugin = ASCorePlugin.getDefault();
-		IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
-		// connects the file.
-		documentProvider.connect(file);
-		// retrieves the actionscript document.
-		IFlexDocument document = (IFlexDocument) documentProvider
-				.getDocument(file);
-		try {
-			if (null != document) {
+        ASCorePlugin corePlugin = ASCorePlugin.getDefault();
+        IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
+        // connects the file.
+        documentProvider.connect(file);
+        // retrieves the actionscript document.
+        IFlexDocument document = (IFlexDocument) documentProvider
+                .getDocument(file);
+        try {
+            if (null != document) {
 
-				ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
-				ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
-				// IContextInformation[] computeContextInformation = processor
-				// .computeContextInformation(textViewer, offset);
-				// processor.getProposalState()
-				if (processor.hasCompletionProposals(textViewer, offset)) {
-					ICompletionProposal[] proposals = processor
-							.computeCompletionProposals(textViewer, offset);
-					for (ICompletionProposal proposal : proposals) {
-						String completion = null;
-						String menu = proposal.getDisplayString();
-						@SuppressWarnings("unused")
-						String info = proposal.getAdditionalProposalInfo();
-						String abbreviation = null;
-						String type = "x";
-						String replacementString = null;
+                ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
+                ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();
+                // IContextInformation[] computeContextInformation = processor
+                // .computeContextInformation(textViewer, offset);
+                // processor.getProposalState()
+                if (processor.hasCompletionProposals(textViewer, offset)) {
+                    ICompletionProposal[] proposals = processor
+                            .computeCompletionProposals(textViewer, offset);
+                    for (ICompletionProposal proposal : proposals) {
+                        String completion = null;
+                        String menu = proposal.getDisplayString();
+                        @SuppressWarnings("unused")
+                        String info = proposal.getAdditionalProposalInfo();
+                        String abbreviation = null;
+                        String type = "x";
+                        String replacementString = null;
 
-						if (proposal instanceof ActionScriptCompletionProposal) {
-							ActionScriptCompletionProposal lazy = (ActionScriptCompletionProposal) proposal;
-							abbreviation = lazy.getName();
-							menu = lazy.getStyledDisplayString().toString();
-							replacementString = lazy.getReplacementString();
-						} else if (proposal instanceof FlexCompletionProposal) {
-							FlexCompletionProposal lazy = (FlexCompletionProposal) proposal;
-							abbreviation = lazy.getName();
-							menu = lazy.getDisplayString();
-							replacementString = lazy.getReplacementString();
-						}
+                        if (proposal instanceof ActionScriptCompletionProposal) {
+                            ActionScriptCompletionProposal lazy = (ActionScriptCompletionProposal) proposal;
+                            abbreviation = lazy.getName();
+                            menu = lazy.getStyledDisplayString().toString();
+                            replacementString = lazy.getReplacementString();
+                        } else if (proposal instanceof FlexCompletionProposal) {
+                            FlexCompletionProposal lazy = (FlexCompletionProposal) proposal;
+                            abbreviation = lazy.getName();
+                            menu = lazy.getDisplayString();
+                            replacementString = lazy.getReplacementString();
+                        }
 
-						Field fReplacementOffset = FlexCompletionProposal.class
-								.getDeclaredField("fReplacementOffset");
-						boolean accessibleFlag = fReplacementOffset
-								.isAccessible();
-						fReplacementOffset.setAccessible(true);
-						int replacementOffset = fReplacementOffset
-								.getInt(proposal);
-						fReplacementOffset.setAccessible(accessibleFlag);
+                        Field fReplacementOffset = FlexCompletionProposal.class
+                                .getDeclaredField("fReplacementOffset");
+                        boolean accessibleFlag = fReplacementOffset
+                                .isAccessible();
+                        fReplacementOffset.setAccessible(true);
+                        int replacementOffset = fReplacementOffset
+                                .getInt(proposal);
+                        fReplacementOffset.setAccessible(accessibleFlag);
 
-						int replacementLength = offset - replacementOffset;
+                        int replacementLength = offset - replacementOffset;
 
-						completion = replacementString
-								.substring(replacementLength);
+                        completion = replacementString
+                                .substring(replacementLength);
 
-						// results.add(new CodeCompletionResult(completion,
-						// abbreviation, menu, Strings.isNullOrEmpty(info) ?
-						// menu : info, type));
-						results.add(new CodeCompletionResult(completion,
-								abbreviation, menu, menu, type));
-					}
-				}
+                        // results.add(new CodeCompletionResult(completion,
+                        // abbreviation, menu, Strings.isNullOrEmpty(info) ?
+                        // menu : info, type));
+                        results.add(new CodeCompletionResult(completion,
+                                abbreviation, menu, menu, type));
+                    }
+                }
 
-			}
-		} finally {
-			if (null != document) {
-				document = null;
-				documentProvider.disconnect(file);
-			}
-		}
-		return results;
-	}
+            }
+        } finally {
+            if (null != document) {
+                document = null;
+                documentProvider.disconnect(file);
+            }
+        }
+        return results;
+    }
 
 }
 
