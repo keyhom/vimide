@@ -39,21 +39,22 @@ import org.vimide.core.util.FileObject;
 import org.vimide.core.util.Position;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 
+import com.adobe.flash.compiler.common.IImportTarget;
+import com.adobe.flash.compiler.definitions.IClassDefinition;
+import com.adobe.flash.compiler.definitions.IDefinition;
+import com.adobe.flash.compiler.definitions.IInterfaceDefinition;
+import com.adobe.flash.compiler.internal.tree.as.ConfigConditionBlockNode;
+import com.adobe.flash.compiler.tree.as.IASNode;
+import com.adobe.flash.compiler.tree.as.IExpressionNode;
+import com.adobe.flash.compiler.tree.as.IIdentifierNode;
+import com.adobe.flash.compiler.tree.as.IImportNode;
+import com.adobe.flash.compiler.tree.as.IScopedNode;
 import com.adobe.flexbuilder.codemodel.common.CMFactory;
-import com.adobe.flexbuilder.codemodel.common.IImportTarget;
-import com.adobe.flexbuilder.codemodel.definitions.IClass;
-import com.adobe.flexbuilder.codemodel.definitions.IDefinition;
-import com.adobe.flexbuilder.codemodel.definitions.IInterface;
 import com.adobe.flexbuilder.codemodel.indices.IClassNameIndex;
 import com.adobe.flexbuilder.codemodel.indices.IInterfaceNameIndex;
-import com.adobe.flexbuilder.codemodel.internal.tree.IdentifierNode;
+import com.adobe.flexbuilder.codemodel.internal.common.CMFactoryInternal;
 import com.adobe.flexbuilder.codemodel.project.IProject;
 import com.adobe.flexbuilder.codemodel.tree.ASOffsetInformation;
-import com.adobe.flexbuilder.codemodel.tree.IASNode;
-import com.adobe.flexbuilder.codemodel.tree.IExpressionNode;
-import com.adobe.flexbuilder.codemodel.tree.IIdentifierNode;
-import com.adobe.flexbuilder.codemodel.tree.IImportNode;
-import com.adobe.flexbuilder.codemodel.tree.IScopedNode;
 import com.adobe.flexide.as.core.ASCorePlugin;
 import com.adobe.flexide.as.core.IASDataProvider;
 import com.adobe.flexide.as.core.document.IASModel;
@@ -67,7 +68,6 @@ import com.google.common.collect.Lists;
  * @author keyhom (keyhom.c@gmail.com)
  */
 @WebServlet(urlPatterns = "/flexImport")
-@SuppressWarnings("restriction")
 public class ImportServlet extends GenericVimideHttpServlet {
 
 	private static final long serialVersionUID = 1L;
@@ -127,7 +127,7 @@ public class ImportServlet extends GenericVimideHttpServlet {
 			IASNode containingNode = null;
 			ASOffsetInformation offsetInfo = null;
 			IASDataProvider dataProvider = null;
-			IdentifierNode node = null;
+			IIdentifierNode node = null;
 
 			synchronized (CMFactory.getLockObject()) {
 				if (document instanceof IASDataProvider) {
@@ -143,8 +143,8 @@ public class ImportServlet extends GenericVimideHttpServlet {
 
 				containingNode = offsetInfo.getContainingNode();
 
-				if (containingNode instanceof IdentifierNode) {
-					node = (IdentifierNode) containingNode;
+				if (containingNode instanceof IIdentifierNode) {
+					node = (IIdentifierNode) containingNode;
 				}
 
 				if (null != node && Strings.isNullOrEmpty(typeName)) {
@@ -156,7 +156,9 @@ public class ImportServlet extends GenericVimideHttpServlet {
 				String[] importName = null;
 				synchronized (CMFactory.getLockObject()) {
 					IExpressionNode[] names = ASOffsetInformation
-							.getQualifiedNames(typeName, offset);
+							.getQualifiedNames(
+									CMFactoryInternal.getCompilerWorkspace(),
+									typeName, offset);
 					if (names.length != 1) {
 						return null;
 					}
@@ -182,12 +184,12 @@ public class ImportServlet extends GenericVimideHttpServlet {
 				if (null != importName && importName.length > 1) {
 					return importName;
 				} else {
-                    int resultOffset = offset;
+					int resultOffset = offset;
 					if (null != importName && importName.length == 1) {
 						((IASModel) document).insertImport(importName[0],
 								offset);
 						((IASModel) document).organizeImports(false);
-                        resultOffset = offset + typeName.length() + 10;
+						resultOffset = offset + typeName.length() + 10;
 					}
 					return Position.fromOffset(file.getLocation().toOSString(),
 							null, resultOffset, 0);
@@ -242,10 +244,10 @@ public class ImportServlet extends GenericVimideHttpServlet {
 
 			IClassNameIndex index = (IClassNameIndex) project
 					.getIndex("className");
-			IClass[] retClasses = index.getByShortName(shortName);
+			IClassDefinition[] retClasses = index.getByShortName(shortName);
 			IInterfaceNameIndex iIndex = (IInterfaceNameIndex) project
 					.getIndex("interface");
-			IInterface[] retInter = iIndex.getByShortName(shortName);
+			IInterfaceDefinition[] retInter = iIndex.getByShortName(shortName);
 
 			@SuppressWarnings("rawtypes")
 			List matchingTypesList = Lists.newArrayList();
@@ -362,20 +364,22 @@ public class ImportServlet extends GenericVimideHttpServlet {
 						}
 
 						if (null != classIndex) {
-							IClass clazz = classIndex
+							IClassDefinition clazz = classIndex
 									.getByQualifiedName(matchedName);
 							if (null != clazz)
-								return !(clazz
-										.isInstanceOf("flash.events.Event"));
+								return !(clazz.isInstanceOf(
+										"flash.events.Event",
+										project.getCompilerProject()));
 						}
 
 						if (null == interfaceIndex)
 							continue;
 
-						IInterface name = interfaceIndex
+						IInterfaceDefinition name = interfaceIndex
 								.getByQualifiedName(qualifiedName);
 						if (null != name)
-							return !(name.isInstanceOf("flash.events.Event"));
+							return !(name.isInstanceOf("flash.events.Event",
+									project.getCompilerProject()));
 					} else {
 						return true;
 					}

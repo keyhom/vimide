@@ -49,92 +49,92 @@ import com.adobe.flexide.editorcore.document.IFlexDocument;
 @WebServlet(urlPatterns = "/flexSearch")
 public class SearchServlet extends GenericVimideHttpServlet {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void doGet(VimideHttpServletRequest req,
-            VimideHttpServletResponse resp) throws ServletException,
-            IOException {
-        final IFile file = getProjectFile(getProject(req), getFile(req)
-                .getAbsolutePath());
-        if (null == file || !file.exists()) {
-            resp.sendError(403);
-            return;
-        }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected void doGet(VimideHttpServletRequest req,
+			VimideHttpServletResponse resp) throws ServletException,
+			IOException {
+		final IFile file = getProjectFile(getProject(req), getFile(req)
+				.getAbsolutePath());
+		if (null == file || !file.exists()) {
+			resp.sendError(403);
+			return;
+		}
 
-        int offset = req.getIntParameter("offset", 0);
-        if (0 < offset)
-            try {
-                offset = new FileObject(file.getContents())
-                        .getCharLength(offset);
-            } catch (final CoreException ignore) {
-            }
+		int offset = req.getIntParameter("offset", 0);
+		if (0 < offset)
+			try {
+				offset = new FileObject(file.getContents())
+						.getCharLength(offset);
+			} catch (final CoreException ignore) {
+			}
 
-        String scope = req.getNotNullParameter("scope");
-        int length = req.getIntParameter("length");
-        String type = req.getNotNullParameter("type");
-        boolean caseSensitive = req.getIntParameter("caseSensitive", 1) != 0 ? true
-                : false;
-        String pattern = req.getNotNullParameter("pattern");
+		String scope = req.getNotNullParameter("scope");
+		int length = req.getIntParameter("length");
+		String type = req.getNotNullParameter("type");
+		boolean caseSensitive = req.getIntParameter("caseSensitive", 1) != 0 ? true
+				: false;
+		String pattern = req.getNotNullParameter("pattern");
 
-        try {
-            Collection<?> matches = collectMatches(file, offset, length,
-                    caseSensitive, type, scope, pattern);
+		try {
+			Collection<?> matches = collectMatches(file, offset, length,
+					caseSensitive, type, scope, pattern);
 
-            resp.writeAsJson(matches);
-        } catch (final Exception e) {
+			resp.writeAsJson(matches);
+		} catch (final Exception e) {
 
-        }
-    }
+		}
+	}
 
-    protected Collection<?> collectMatches(IFile file, int offset, int length,
-            boolean caseSensitive, String type, String scope, String pat)
-            throws Exception {
+	protected Collection<?> collectMatches(IFile file, int offset, int length,
+			boolean caseSensitive, String type, String scope, String pat)
+			throws Exception {
 
-        if (null == file)
-            return null;
+		if (null == file)
+			return null;
 
-        // Retrieves document by ASCore.
-        ASCorePlugin corePlugin = ASCorePlugin.getDefault();
-        IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
-        documentProvider.connect(file);
-        IFlexDocument document = (IFlexDocument) documentProvider
-                .getDocument(file);
+		// Retrieves document by ASCore.
+		ASCorePlugin corePlugin = ASCorePlugin.getDefault();
+		IDocumentProvider documentProvider = corePlugin.getDocumentProvider();
+		documentProvider.connect(file);
+		IFlexDocument document = (IFlexDocument) documentProvider
+				.getDocument(file);
 
-        try {
-            int context = -1;
-            SearchScope searchScope = SearchScope.createProjectScope(file
-                    .getLocation());
-            SearchContext searchContext = searchScope.getContext();
+		try {
+			int context = -1;
+			SearchScope searchScope = SearchScope.createProjectScope(file
+					.getLocation());
+			SearchContext searchContext = searchScope.getContext();
 
-            // if (null != definition) {
-            // boolean imported = false;
-            // List<String> allImports = ((IASModel) document)
-            // .getAllImports(offset);
-            // for (String importedType : allImports) {
-            // if (importedType.equals(definition
-            // .getDefinitionQualifiedName())) {
-            // imported = true;
-            // }
-            // }
+			// if (null != definition) {
+			// boolean imported = false;
+			// List<String> allImports = ((IASModel) document)
+			// .getAllImports(offset);
+			// for (String importedType : allImports) {
+			// if (importedType.equals(definition
+			// .getDefinitionQualifiedName())) {
+			// imported = true;
+			// }
+			// }
+			//
+			// if (!imported) {
+			// ((IASModel) document).createImportElement().setImportName(
+			// definition.getDefinitionQualifiedName());
+			// }
+			// }
 
-            // if (!imported) {
-            // ((IASModel) document).createImportElement().setImportName(
-            // definition.getDefinitionQualifiedName());
-            // }
-            // }
-
-            return null;
-        } finally {
-            if (null != document) {
-                document = null;
-                documentProvider.disconnect(file);
-            }
-        }
-    }
+			return null;
+		} finally {
+			if (null != document) {
+				document = null;
+				documentProvider.disconnect(file);
+			}
+		}
+	}
 }
 
 // vim:ft=java

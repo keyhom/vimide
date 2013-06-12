@@ -47,13 +47,12 @@ import org.vimide.eclipse.flashbuilder.complete.CodeCompletionResponse;
 import org.vimide.eclipse.flashbuilder.search.SearchManager;
 import org.vimide.eclipse.jface.text.DummyTextViewer;
 
+import com.adobe.flash.compiler.definitions.IDefinition;
+import com.adobe.flash.compiler.tree.as.IASNode;
+import com.adobe.flash.compiler.tree.as.IIdentifierNode;
+import com.adobe.flash.compiler.tree.as.IMemberAccessExpressionNode;
 import com.adobe.flexbuilder.codemodel.common.CMFactory;
-import com.adobe.flexbuilder.codemodel.definitions.IDefinition;
-import com.adobe.flexbuilder.codemodel.internal.tree.IdentifierNode;
-import com.adobe.flexbuilder.codemodel.internal.tree.MemberAccessExpressionNode;
 import com.adobe.flexbuilder.codemodel.tree.ASOffsetInformation;
-import com.adobe.flexbuilder.codemodel.tree.IASNode;
-import com.adobe.flexbuilder.codemodel.tree.IMemberAccessExpressionNode;
 import com.adobe.flexide.as.core.ASCorePlugin;
 import com.adobe.flexide.as.core.IASDataProvider;
 import com.adobe.flexide.as.core.contentassist.ActionScriptCompletionProcessor;
@@ -70,7 +69,6 @@ import com.google.common.collect.Maps;
  * 
  * @author keyhom (keyhom.c@gmail.com)
  */
-@SuppressWarnings("restriction")
 @WebServlet(urlPatterns = "/flexComplete")
 public class CodeCompleteServlet extends GenericVimideHttpServlet {
 
@@ -150,7 +148,7 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
             ASOffsetInformation offsetInfo = null;
             IASNode containingNode = null;
             IASDataProvider dataProvider = null;
-            IdentifierNode node = null;
+            IIdentifierNode node = null;
 
             try {
                 synchronized (CMFactory.getLockObject()) {
@@ -170,16 +168,16 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
                 if (null == containingNode)
                     return null;
 
-                if (!(containingNode instanceof MemberAccessExpressionNode)) {
+                if (!(containingNode instanceof IMemberAccessExpressionNode)) {
                     containingNode = containingNode
                             .getAncestorOfType(IMemberAccessExpressionNode.class);
                 }
 
                 if (null != containingNode
-                        && containingNode instanceof MemberAccessExpressionNode) {
-                    if (((MemberAccessExpressionNode) containingNode).getLeft() instanceof IdentifierNode) {
-                        node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
-                                .getLeft();
+                        && containingNode instanceof IMemberAccessExpressionNode) {
+                    if (((IMemberAccessExpressionNode) containingNode).getLeftOperandNode() instanceof IIdentifierNode) {
+                        node = (IIdentifierNode) ((IMemberAccessExpressionNode) containingNode)
+                                .getLeftOperandNode();
                     }
                 }
 
@@ -282,17 +280,17 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
             if (null == containingNode)
                 return null;
 
-            IdentifierNode node = null;
+            IIdentifierNode node = null;
 
-            if (!(containingNode instanceof MemberAccessExpressionNode)) {
+            if (!(containingNode instanceof IMemberAccessExpressionNode)) {
                 containingNode = containingNode
                         .getAncestorOfType(IMemberAccessExpressionNode.class);
             }
 
             if (null != containingNode
-                    && containingNode instanceof MemberAccessExpressionNode) {
-                node = (IdentifierNode) ((MemberAccessExpressionNode) containingNode)
-                        .getLeft();
+                    && containingNode instanceof IMemberAccessExpressionNode) {
+                node = (IIdentifierNode) ((IMemberAccessExpressionNode) containingNode)
+                        .getLeftOperandNode();
             }
 
             if (null != node) {

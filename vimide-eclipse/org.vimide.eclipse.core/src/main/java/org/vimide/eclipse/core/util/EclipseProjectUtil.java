@@ -55,7 +55,7 @@ public class EclipseProjectUtil {
         }
 
         // workspace preference.
-        scopeContext = new IScopeContext[] { new InstanceScope() };
+        scopeContext = new IScopeContext[] { InstanceScope.INSTANCE };
         String platformDefault = System.getProperty("line.separator", "\n");
         return Platform.getPreferencesService().getString(Platform.PI_RUNTIME,
                 Platform.PREF_LINE_SEPARATOR, platformDefault, scopeContext);

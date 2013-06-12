@@ -38,10 +38,10 @@ import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.core.util.FileObject;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 
+import com.adobe.flash.compiler.tree.as.IASNode;
+import com.adobe.flash.compiler.tree.as.IFunctionNode;
 import com.adobe.flexbuilder.codemodel.common.CMFactory;
-import com.adobe.flexbuilder.codemodel.definitions.IFunction;
 import com.adobe.flexbuilder.codemodel.tree.ASOffsetInformation;
-import com.adobe.flexbuilder.codemodel.tree.IASNode;
 import com.adobe.flexide.as.core.ASCorePlugin;
 import com.adobe.flexide.as.core.document.ASDocument;
 import com.adobe.flexide.editorcore.document.IFlexDocument;
@@ -120,12 +120,12 @@ public class CommentServlet extends GenericVimideHttpServlet {
                             .getOffsetInformation(offset);
 
                     IASNode node = offsetInfo
-                            .getContainingNodeOfType(IFunction.class);
+                            .getContainingNodeOfType(IFunctionNode.class);
                     int offsetToUse = info.getOffset();
 
                     if (null != node) {
                         offsetToUse = doc.getLineInformationOfOffset(
-                                ((IFunction) node).getNameStart()).getOffset();
+                                ((IFunctionNode) node).getNameStart()).getOffset();
                     }
 
                     int insertOffset = ((ASDocument) doc)

@@ -69,7 +69,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jface.text,
  org.eclipse.ui.ide.application
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Bundle-ActivationPolicy: lazy
+Bundle-Localization: plugin
 Bundle-ClassPath: .,
  lib/commons-cli-1.2.jar,
  lib/commons-exec-1.1.jar,

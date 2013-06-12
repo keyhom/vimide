@@ -114,7 +114,6 @@ public class FlexUpdateSrcServlet extends GenericVimideHttpServlet {
                 try {
 
                     for (IMarker problem : problems) {
-                        @SuppressWarnings("unchecked")
                         final Map<String, Object> attributes = problem
                                 .getAttributes();
                         int sourceStart = (Integer) attributes

@@ -32,12 +32,13 @@ import org.vimide.core.servlet.VimideHttpServletRequest;
 import org.vimide.core.servlet.VimideHttpServletResponse;
 import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 
+import com.adobe.flash.compiler.definitions.IClassDefinition;
+import com.adobe.flash.compiler.definitions.IDefinition;
+import com.adobe.flash.compiler.tree.as.IClassNode;
+import com.adobe.flash.compiler.tree.as.IFileNode;
 import com.adobe.flexbuilder.as.editor.core.OverrideMethodsProcessor;
 import com.adobe.flexbuilder.codemodel.common.CMFactory;
-import com.adobe.flexbuilder.codemodel.definitions.IClass;
-import com.adobe.flexbuilder.codemodel.definitions.IDefinition;
 import com.adobe.flexbuilder.codemodel.tree.ASOffsetInformation;
-import com.adobe.flexbuilder.codemodel.tree.IFileNode;
 import com.adobe.flexide.as.core.document.IASModel;
 
 /**
@@ -48,85 +49,86 @@ import com.adobe.flexide.as.core.document.IASModel;
 @WebServlet(urlPatterns = "/flexImpl")
 public class OverrideImplServlet extends GenericVimideHttpServlet {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void doGet(final VimideHttpServletRequest req,
-            final VimideHttpServletResponse resp) throws ServletException,
-            IOException {
-        final IFile file = getProjectFile(getProject(req), getFile(req)
-                .getAbsolutePath());
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected void doGet(final VimideHttpServletRequest req,
+			final VimideHttpServletResponse resp) throws ServletException,
+			IOException {
+		final IFile file = getProjectFile(getProject(req), getFile(req)
+				.getAbsolutePath());
 
-        if (null == file || !file.exists()) {
-            resp.sendError(403);
-            return;
-        }
+		if (null == file || !file.exists()) {
+			resp.sendError(403);
+			return;
+		}
 
-        Runnable runner = new Runnable() {
+		Runnable runner = new Runnable() {
 
-            @Override
-            public void run() {
-                Object[] arrayOfObject1;
-                OverrideMethodsProcessor processor = createProcessor();
+			@Override
+			public void run() {
+				Object[] arrayOfObject1;
+				OverrideMethodsProcessor processor = createProcessor();
 
-                if (null == processor)
-                    return;
+				if (null == processor)
+					return;
 
-                OverrideMethodsProcessor.OverrideMethodsProcessorNode[] ancestory = (OverrideMethodsProcessor.OverrideMethodsProcessorNode[]) null;
-                ancestory = processor.getAvailableMethods();
+				OverrideMethodsProcessor.OverrideMethodsProcessorNode[] ancestory = (OverrideMethodsProcessor.OverrideMethodsProcessorNode[]) null;
+				ancestory = processor.getAvailableMethods();
 
-                if (ancestory.length == 0) {
-                    // XXX: no methods to make an overridden/implemetation.
-                    return;
-                }
+				if (ancestory.length == 0) {
+					// XXX: no methods to make an overridden/implemetation.
+					return;
+				}
 
-            }
+			}
 
-        };
+		};
 
-        runner.run();
-    }
+		runner.run();
+	}
 
-    protected OverrideMethodsProcessor createProcessor() {
-        IASModel model = null;
-        OverrideMethodsProcessor processor = null;
+	protected OverrideMethodsProcessor createProcessor() {
+		IASModel model = null;
+		OverrideMethodsProcessor processor = null;
 
-        synchronized (CMFactory.getLockObject()) {
-            IClass cls = null;
-            int offset = 0;
-        }
-        return null;
-    }
+		synchronized (CMFactory.getLockObject()) {
+			IClassDefinition cls = null;
+			int offset = 0;
+		}
+		return null;
+	}
 
-    protected IClass computeTargetClass(IASModel model, int offset) {
-        IFileNode fileNode = (IFileNode) model.getBaseFileNode();
-        ASOffsetInformation info = new ASOffsetInformation(offset, fileNode);
-        IClass cls = (IClass) info.getContainingNodeOfType(IClass.class);
+	protected IClassDefinition computeTargetClass(IASModel model, int offset) {
+		IFileNode fileNode = (IFileNode) model.getBaseFileNode();
+		ASOffsetInformation info = new ASOffsetInformation(offset, fileNode);
+		IClassDefinition cls = ((IClassNode) info
+				.getContainingNodeOfType(IClassNode.class)).getDefinition();
 
-        if (null != cls) {
-            return cls;
-        }
+		if (null != cls) {
+			return cls;
+		}
 
-        return computeTargetClassFromFile(fileNode);
-    }
+		return computeTargetClassFromFile(fileNode);
+	}
 
-    protected IClass computeTargetClassFromFile(IFileNode fileNode) {
-        IDefinition[] arrayOfIDefinition1;
-        IDefinition[] allTopLevelDefinitions = fileNode
-                .getAllTopLevelDefinitions(false, true);
+	protected IClassDefinition computeTargetClassFromFile(IFileNode fileNode) {
+		IDefinition[] arrayOfIDefinition1;
+		IDefinition[] allTopLevelDefinitions = fileNode.getTopLevelDefinitions(
+				false, true);
 
-        int j = (arrayOfIDefinition1 = allTopLevelDefinitions).length;
-        for (int i = 0; i < j; ++i) {
-            IDefinition def = arrayOfIDefinition1[i];
-            if (def instanceof IClass) {
-                return ((IClass) def);
-            }
-        }
-        return null;
-    }
+		int j = (arrayOfIDefinition1 = allTopLevelDefinitions).length;
+		for (int i = 0; i < j; ++i) {
+			IDefinition def = arrayOfIDefinition1[i];
+			if (def instanceof IClassDefinition) {
+				return ((IClassDefinition) def);
+			}
+		}
+		return null;
+	}
 
 }
 

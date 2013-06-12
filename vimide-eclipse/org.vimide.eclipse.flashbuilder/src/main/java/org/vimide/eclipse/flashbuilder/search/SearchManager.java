@@ -27,11 +27,9 @@ import java.util.Set;
 import org.eclipse.ui.dialogs.FilteredList;
 import org.eclipse.ui.dialogs.SearchPattern;
 
+import com.adobe.flash.compiler.definitions.IDefinition;
 import com.adobe.flexbuilder.codemodel.common.CMFactory;
-import com.adobe.flexbuilder.codemodel.definitions.IDefinition;
 import com.adobe.flexbuilder.codemodel.project.IProject;
-import com.adobe.flexbuilder.codemodel.tree.IASNode;
-import com.adobe.flexbuilder.codemodel.tree.IProjectRootNode;
 import com.adobe.flexide.as.core.ui.dialogs.ASTypesLabelProvider;
 import com.adobe.flexide.as.core.ui.dialogs.CamelCaseFilterMatcher;
 import com.adobe.flexide.as.core.ui.dialogs.ClassAndInterfaceProvider;
@@ -192,14 +190,14 @@ public class SearchManager {
         }
 
         public boolean isConsistentItem(Object paramObject) {
-            if (paramObject instanceof IASNode) {
-                IASNode node = ((IASNode) paramObject)
-                        .getAncestorOfType(IProjectRootNode.class);
-                if (null != node) {
-                    return (((IProjectRootNode) node).getProject()
-                            .getSpecification() != null);
-                }
-            }
+//            if (paramObject instanceof IASNode) {
+//                IASNode node = ((IASNode) paramObject)
+//                        .getAncestorOfType(IProjectRootNode.class);
+//                if (null != node) {
+//                    return (((IProjectRootNode) node).getProject()
+//                            .getSpecification() != null);
+//                }
+//            }
             return false;
         }
     }

@@ -56,7 +56,6 @@ public class EclipseResourceUtil {
         return m;
     }
 
-    @SuppressWarnings("unchecked")
 	public static Map<String, Object> getProblem(IMarker marker)
             throws CoreException, FileNotFoundException {
         if (null == marker)
