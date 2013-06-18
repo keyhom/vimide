@@ -1,0 +1,9 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="notice" value="Copyright (c) &amp;#36;today.year keyhom.c@gmail.com.&#10;&#10;This software is provided 'as-is', without any express or implied warranty.&#10;In no event will the authors be held liable for any damages arising from&#10;the use of this software.&#10;&#10;Permission is granted to anyone to use this software for any purpose&#10;excluding commercial applications, and to alter it and redistribute it&#10;freely, subject to the following restrictions:&#10;&#10;    1. The origin of this software must not be misrepresented; you must not&#10;    claim that you wrote the original software. If you use this software&#10;    in a product, an acknowledgment in the product documentation would be&#10;    appreciated but is not required.&#10;&#10;    2. Altered source versions must be plainly marked as such, and must not&#10;    be misrepresented as being the original software.&#10;&#10;    3. This notice may not be removed or altered from any source&#10;    distribution." />
+    <option name="keyword" value="Copyright" />
+    <option name="allowReplaceKeyword" value="" />
+    <option name="myName" value="Keyhom AS-IS" />
+    <option name="myLocal" value="true" />
+  </copyright>
+</component>
