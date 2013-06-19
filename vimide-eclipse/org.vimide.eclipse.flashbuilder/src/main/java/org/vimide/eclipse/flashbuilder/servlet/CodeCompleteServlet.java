@@ -184,10 +184,10 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
 				}
 
 				if (null != node
-						&& !node.getPackageName().equals(
+						&& (node.getPackageName().isEmpty() || !node.getPackageName().equals(
 								((IClassNode) node
 										.getAncestorOfType(IClassNode.class))
-										.getDefinition().getPackageName())) {
+										.getDefinition().getPackageName()))) {
 					// definition found, check if imported needed.
 					offset = node.getEnd() - 1;
 					// get completions.
@@ -365,7 +365,11 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
 						String completion = null;
 						String menu = proposal.getDisplayString();
 						@SuppressWarnings("unused")
-						String info = proposal.getAdditionalProposalInfo();
+                        String info;
+                        try {
+    						info = proposal.getAdditionalProposalInfo();
+                        } catch (Exception e) {
+                        }
 						String abbreviation = null;
 						String type = "x";
 						String replacementString = null;

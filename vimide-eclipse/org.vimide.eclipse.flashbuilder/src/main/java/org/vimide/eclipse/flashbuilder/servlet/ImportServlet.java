@@ -42,8 +42,8 @@ import org.vimide.eclipse.core.servlet.GenericVimideHttpServlet;
 import com.adobe.flash.compiler.common.IImportTarget;
 import com.adobe.flash.compiler.definitions.IClassDefinition;
 import com.adobe.flash.compiler.definitions.IDefinition;
+import com.adobe.flash.compiler.definitions.IFunctionDefinition;
 import com.adobe.flash.compiler.definitions.IInterfaceDefinition;
-import com.adobe.flash.compiler.internal.tree.as.ConfigConditionBlockNode;
 import com.adobe.flash.compiler.tree.as.IASNode;
 import com.adobe.flash.compiler.tree.as.IExpressionNode;
 import com.adobe.flash.compiler.tree.as.IIdentifierNode;
@@ -51,6 +51,7 @@ import com.adobe.flash.compiler.tree.as.IImportNode;
 import com.adobe.flash.compiler.tree.as.IScopedNode;
 import com.adobe.flexbuilder.codemodel.common.CMFactory;
 import com.adobe.flexbuilder.codemodel.indices.IClassNameIndex;
+import com.adobe.flexbuilder.codemodel.indices.IFunctionNameIndex;
 import com.adobe.flexbuilder.codemodel.indices.IInterfaceNameIndex;
 import com.adobe.flexbuilder.codemodel.internal.common.CMFactoryInternal;
 import com.adobe.flexbuilder.codemodel.project.IProject;
@@ -243,16 +244,25 @@ public class ImportServlet extends GenericVimideHttpServlet {
 			}
 
 			IClassNameIndex index = (IClassNameIndex) project
-					.getIndex("className");
+					.getIndex(IClassNameIndex.ID);
 			IClassDefinition[] retClasses = index.getByShortName(shortName);
 			IInterfaceNameIndex iIndex = (IInterfaceNameIndex) project
-					.getIndex("interface");
+					.getIndex(IInterfaceNameIndex.ID);
 			IInterfaceDefinition[] retInter = iIndex.getByShortName(shortName);
 
 			@SuppressWarnings("rawtypes")
 			List matchingTypesList = Lists.newArrayList();
 			matchingTypesList.addAll(Arrays.asList(retClasses));
 			matchingTypesList.addAll(Arrays.asList(retInter));
+
+			if (matchingTypesList.isEmpty()) {
+				IFunctionNameIndex fIndex = (IFunctionNameIndex) project
+						.getIndex(IFunctionNameIndex.ID);
+				IFunctionDefinition[] retFunc = fIndex
+						.getByShortName(shortName);
+				matchingTypesList.addAll(Arrays.asList(retFunc));
+			}
+
 			IDefinition[] matchingTypes = (IDefinition[]) matchingTypesList
 					.toArray(new IDefinition[matchingTypesList.size()]);
 			String[] qualifiedNames = new String[matchingTypes.length];
@@ -270,23 +280,28 @@ public class ImportServlet extends GenericVimideHttpServlet {
 						.getImportTargetForPackageName(currentPackageName);
 				for (int i = 0; i < qualifiedNames.length
 						&& !haveMatchingImport; i++) {
-					String matchedName = importTarget
-							.getQualifiedName(qualifiedNames[i]);
-					if (null != matchedName
-							&& matchedName.equals(qualifiedNames[i])) {
-						haveMatchingImport = true;
-						break;
+					if (null != qualifiedNames[i]) {
+						String matchedName = importTarget
+								.getQualifiedName(qualifiedNames[i]);
+						if (null != matchedName
+								&& matchedName.equals(qualifiedNames[i])) {
+							haveMatchingImport = true;
+							break;
+						}
 					}
 				}
 
 				if (!haveMatchingImport) {
 					for (int i = 0; i < qualifiedNames.length; i++) {
-						haveMatchingImport = importExistsInPackageScope(
-								baseModel, qualifiedNames[i],
-								(IImportNode[]) imports
-										.toArray(new IImportNode[0]), project);
-						if (haveMatchingImport)
-							break;
+						if (null != qualifiedNames[i]) {
+							haveMatchingImport = importExistsInPackageScope(
+									baseModel, qualifiedNames[i],
+									(IImportNode[]) imports
+											.toArray(new IImportNode[0]),
+									project);
+							if (haveMatchingImport)
+								break;
+						}
 					}
 
 					if (!haveMatchingImport && matchingTypes.length == 1) {
