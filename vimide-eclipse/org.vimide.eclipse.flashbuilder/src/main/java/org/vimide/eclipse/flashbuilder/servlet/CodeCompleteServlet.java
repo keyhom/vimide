@@ -183,11 +183,11 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
 					}
 				}
 
-				if (null != node
-						&& (node.getPackageName().isEmpty() || !node.getPackageName().equals(
-								((IClassNode) node
-										.getAncestorOfType(IClassNode.class))
-										.getDefinition().getPackageName()))) {
+				if (null != node) {
+//						&& (node.getPackageName().isEmpty() || !node.getPackageName().equals(
+//								((IClassNode) node
+//										.getAncestorOfType(IClassNode.class))
+//										.getDefinition().getPackageName()))) {
 					// definition found, check if imported needed.
 					offset = node.getEnd() - 1;
 					// get completions.
@@ -352,6 +352,8 @@ public class CodeCompleteServlet extends GenericVimideHttpServlet {
 				.getDocument(file);
 		try {
 			if (null != document) {
+                
+				IDefinition definition = ASOffsetInformation.getDefinition(((IASModel)document).getBaseFileNode(), offset);
 
 				ITextViewer textViewer = new DummyTextViewer(document, 0, 0);
 				ActionScriptCompletionProcessor processor = new ActionScriptCompletionProcessor();

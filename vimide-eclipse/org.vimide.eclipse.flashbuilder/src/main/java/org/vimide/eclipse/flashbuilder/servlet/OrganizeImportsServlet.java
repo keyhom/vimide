@@ -114,8 +114,9 @@ public class OrganizeImportsServlet extends GenericVimideHttpServlet {
     }
 
     private boolean isRemoveUnused() {
-        return ASCorePlugin.getDefault().getPreferenceStore()
-                .getBoolean("removeUnused");
+//        return ASCorePlugin.getDefault().getPreferenceStore()
+//                .getBoolean("removeUnused");
+        return true;
     }
 
 }
