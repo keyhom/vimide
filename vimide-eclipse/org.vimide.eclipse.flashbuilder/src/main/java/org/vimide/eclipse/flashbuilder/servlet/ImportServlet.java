@@ -190,7 +190,7 @@ public class ImportServlet extends GenericVimideHttpServlet {
 						((IASModel) document).insertImport(importName[0],
 								offset);
 						((IASModel) document).organizeImports(false);
-						resultOffset = offset + typeName.length() + 10;
+						resultOffset = offset + typeName.length() + 1;
 					}
 					return Position.fromOffset(file.getLocation().toOSString(),
 							null, resultOffset, 0);
