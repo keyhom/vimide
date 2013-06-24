@@ -130,27 +130,19 @@ public abstract class GenericVimideHttpServlet extends VimideHttpServlet {
 
 		if (refresh) {
 			try {
-				int depth = IResource.DEPTH_ZERO;
-				if (!ifile.isSynchronized(IResource.DEPTH_ZERO)) {
-					depth = IResource.DEPTH_ZERO;
-				} else if (!ifile.isSynchronized(IResource.DEPTH_ONE)) {
-					depth = IResource.DEPTH_ONE;
-				} else if (!ifile.isSynchronized(IResource.DEPTH_INFINITE)) {
-					depth = IResource.DEPTH_INFINITE;
-				} else
-					return ifile;
+				int depth = IResource.DEPTH_INFINITE;
 
 				IResource targetRes = ifile;
-				targetRes.refreshLocal(depth, null);
-				targetRes = targetRes.getParent();
-
-				while (targetRes != null) {
-					targetRes.refreshLocal(0, null);
-					targetRes = targetRes.getParent();
-				}
+				targetRes.refreshLocal(1000 + depth, null);
+//				targetRes = targetRes.getParent();
+//
+//				while (targetRes != null) {
+//					targetRes.refreshLocal(0, null);
+//					targetRes = targetRes.getParent();
+//				}
                 
 				try {
-					Thread.sleep(0L);
+                    Thread.yield();
 				} catch (final Exception ignore) {
 				}
 			} catch (final CoreException ignore) {
